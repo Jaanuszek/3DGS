@@ -1,0 +1,20 @@
+[
+{
+  "directory": "/home/jabol/Desktop/3DGS/CPU_gaussian_renderer/build",
+  "command": "/usr/bin/c++  -I/home/jabol/Desktop/3DGS/CPU_gaussian_renderer/include  -o CMakeFiles/core_lib.dir/src/gaussian.cpp.o -c /home/jabol/Desktop/3DGS/CPU_gaussian_renderer/src/gaussian.cpp",
+  "file": "/home/jabol/Desktop/3DGS/CPU_gaussian_renderer/src/gaussian.cpp",
+  "output": "CMakeFiles/core_lib.dir/src/gaussian.cpp.o"
+},
+{
+  "directory": "/home/jabol/Desktop/3DGS/CPU_gaussian_renderer/build",
+  "command": "/usr/bin/c++  -I/home/jabol/Desktop/3DGS/CPU_gaussian_renderer/include  -o CMakeFiles/core_lib.dir/src/ppm.cpp.o -c /home/jabol/Desktop/3DGS/CPU_gaussian_renderer/src/ppm.cpp",
+  "file": "/home/jabol/Desktop/3DGS/CPU_gaussian_renderer/src/ppm.cpp",
+  "output": "CMakeFiles/core_lib.dir/src/ppm.cpp.o"
+},
+{
+  "directory": "/home/jabol/Desktop/3DGS/CPU_gaussian_renderer/build",
+  "command": "/usr/bin/c++  -I/home/jabol/Desktop/3DGS/CPU_gaussian_renderer/include  -o CMakeFiles/Gaussian_renderer.dir/main.cpp.o -c /home/jabol/Desktop/3DGS/CPU_gaussian_renderer/main.cpp",
+  "file": "/home/jabol/Desktop/3DGS/CPU_gaussian_renderer/main.cpp",
+  "output": "CMakeFiles/Gaussian_renderer.dir/main.cpp.o"
+}
+]

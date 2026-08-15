@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/Gaussian_renderer.dir/main.cpp.o -o Gaussian_renderer  libcore_lib.a 
