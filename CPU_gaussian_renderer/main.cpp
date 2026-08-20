@@ -1,11 +1,32 @@
 #include "ppm.hpp"
 #include "gaussian.hpp"
+#include "projection.hpp"
 #include <iostream>
+
+
 
 int main()
 {
     constexpr int width = 1920;
     constexpr int height = 1080;
+
+    My::vec<float,3> vec3 = {1.0f, 2.0f, 3.0f};
+
+    std::array<std::array<float,3>,2> abcd = {
+      {
+          {1.0f,2.0f,3.0f},
+          {3.0f, 2.0f, 1.0f}
+      }
+    };
+
+    My::mat<float,4,3> mat4x3 = {
+        {
+            1.0f, 1.0f, 3.0f,
+            3.0f, 2.0f, 1.0f,
+            7.0f, 6.0f, 5.0f,
+            8.0f, 9.0f, 10.0f
+        }
+    };
 
 
     pixel pixels[width * height] = {

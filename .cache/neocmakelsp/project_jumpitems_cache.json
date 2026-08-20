@@ -1,0 +1,1127 @@
+{
+  "date": "2026-08-16T21:36:39.592239505+02:00",
+  "data": {
+    "${contentNameLower}_POPULATED": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1845,
+            "character": 6
+          },
+          "end": {
+            "line": 1845,
+            "character": 35
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "${contentNameLower}_SOURCE_DIR": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1843,
+            "character": 6
+          },
+          "end": {
+            "line": 1843,
+            "character": 36
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\nwith just the content name.",
+      "is_function": false
+    },
+    "FetchContent_GetProperties": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1426,
+            "character": 9
+          },
+          "end": {
+            "line": 1426,
+            "character": 35
+          }
+        }
+      },
+      "document_info": "defined function\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\nif they are using the populated content in that way.",
+      "is_function": true
+    },
+    "savedDetailsPropertyName": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1280,
+            "character": 8
+          },
+          "end": {
+            "line": 1280,
+            "character": 32
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\nthe parent project in an unexpected way, such as from a mirror or fork.",
+      "is_function": false
+    },
+    "FETCHCONTENT_BASE_DIR": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1687,
+            "character": 4
+          },
+          "end": {
+            "line": 1687,
+            "character": 25
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__cmake_providerArgs": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1936,
+            "character": 12
+          },
+          "end": {
+            "line": 1936,
+            "character": 32
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__cmake_fcProvider_${__cmake_contentNameLower}": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1971,
+            "character": 12
+          },
+          "end": {
+            "line": 1971,
+            "character": 58
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "capturedOutput": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1578,
+            "character": 8
+          },
+          "end": {
+            "line": 1578,
+            "character": 22
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "FetchContent_SetPopulated": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1381,
+            "character": 9
+          },
+          "end": {
+            "line": 1381,
+            "character": 34
+          }
+        }
+      },
+      "document_info": "defined function\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\nplace to call it outside of the FetchContent module).",
+      "is_function": true
+    },
+    "__FetchContent_directPopulate": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1479,
+            "character": 9
+          },
+          "end": {
+            "line": 1479,
+            "character": 38
+          }
+        }
+      },
+      "document_info": "defined function\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\nExternalProject_Add(), except for QUIET and SUBBUILD_DIR.",
+      "is_function": true
+    },
+    "propertyName": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1890,
+            "character": 6
+          },
+          "end": {
+            "line": 1890,
+            "character": 18
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\nconfig files through its normal processing.",
+      "is_function": false
+    },
+    "__FetchContent_declareDetails": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1118,
+            "character": 9
+          },
+          "end": {
+            "line": 1118,
+            "character": 38
+          }
+        }
+      },
+      "document_info": "defined function\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\nbuild will be in control).",
+      "is_function": true
+    },
+    "${contentName}_SOURCE_DIR": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1536,
+            "character": 6
+          },
+          "end": {
+            "line": 1536,
+            "character": 31
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\nthe content details set by the project.",
+      "is_function": false
+    },
+    "__tryFindPackageAllowed": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1174,
+            "character": 10
+          },
+          "end": {
+            "line": 1174,
+            "character": 33
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "ARG_GIT_REPOSITORY": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1289,
+            "character": 10
+          },
+          "end": {
+            "line": 1289,
+            "character": 28
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "disconnectUpdates": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1803,
+            "character": 10
+          },
+          "end": {
+            "line": 1803,
+            "character": 27
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "ARG_DOWNLOAD_EXTRACT_TIMESTAMP": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1346,
+            "character": 14
+          },
+          "end": {
+            "line": 1346,
+            "character": 44
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__FETCHCONTENT_COPY_FILE": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1549,
+            "character": 8
+          },
+          "end": {
+            "line": 1549,
+            "character": 32
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "${ARG_POPULATED}": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1466,
+            "character": 8
+          },
+          "end": {
+            "line": 1466,
+            "character": 24
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__sawGlobalKeyword": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1155,
+            "character": 12
+          },
+          "end": {
+            "line": 1155,
+            "character": 30
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "outputOptions": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1579,
+            "character": 8
+          },
+          "end": {
+            "line": 1579,
+            "character": 21
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "FetchContent_MakeAvailable": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1904,
+            "character": 6
+          },
+          "end": {
+            "line": 1904,
+            "character": 32
+          }
+        }
+      },
+      "document_info": "defined macro\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\ncalls will be available to the caller.",
+      "is_function": true
+    },
+    "FETCHCONTENT_QUIET": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1686,
+            "character": 7
+          },
+          "end": {
+            "line": 1686,
+            "character": 25
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__cmake_add_subdirectory_args": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 2055,
+            "character": 12
+          },
+          "end": {
+            "line": 2055,
+            "character": 41
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "ARG_EXTRA": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1548,
+            "character": 8
+          },
+          "end": {
+            "line": 1548,
+            "character": 17
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "ARG_BINARY_DIR": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1529,
+            "character": 8
+          },
+          "end": {
+            "line": 1529,
+            "character": 22
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "FETCHCONTENT_UPDATES_DISCONNECTED": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1685,
+            "character": 7
+          },
+          "end": {
+            "line": 1685,
+            "character": 40
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "inFileDir": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1871,
+            "character": 6
+          },
+          "end": {
+            "line": 1871,
+            "character": 15
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\nnot the Config and ConfigVersion forms.",
+      "is_function": false
+    },
+    "FetchContent_Declare": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1230,
+            "character": 9
+          },
+          "end": {
+            "line": 1230,
+            "character": 29
+          }
+        }
+      },
+      "document_info": "defined function\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\nSOURCE_DIR and BUILD_DIR.",
+      "is_function": true
+    },
+    "sep": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1357,
+            "character": 10
+          },
+          "end": {
+            "line": 1357,
+            "character": 13
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__FetchContent_setupFindPackageRedirection": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1849,
+            "character": 9
+          },
+          "end": {
+            "line": 1849,
+            "character": 51
+          }
+        }
+      },
+      "document_info": "defined function\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": true
+    },
+    "oneValueArgs": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1489,
+            "character": 6
+          },
+          "end": {
+            "line": 1489,
+            "character": 18
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "FETCHCONTENT_FULLY_DISCONNECTED": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1684,
+            "character": 7
+          },
+          "end": {
+            "line": 1684,
+            "character": 38
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "GLOBAL": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1891,
+            "character": 6
+          },
+          "end": {
+            "line": 1891,
+            "character": 12
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "configFilePrefix1": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1872,
+            "character": 6
+          },
+          "end": {
+            "line": 1872,
+            "character": 23
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "CMAKE_CXX_STANDARD": {
+      "location": {
+        "uri": "file:///home/jabol/Desktop/3DGS/CPU_gaussian_renderer/CMakeLists.txt",
+        "range": {
+          "start": {
+            "line": 6,
+            "character": 5
+          },
+          "end": {
+            "line": 6,
+            "character": 23
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /home/jabol/Desktop/3DGS/CPU_gaussian_renderer/CMakeLists.txt",
+      "is_function": false
+    },
+    "ARG_SUBBUILD_DIR": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1517,
+            "character": 8
+          },
+          "end": {
+            "line": 1517,
+            "character": 24
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "${contentName}_BINARY_DIR": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1537,
+            "character": 6
+          },
+          "end": {
+            "line": 1537,
+            "character": 31
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__tryFindPackage": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1163,
+            "character": 12
+          },
+          "end": {
+            "line": 1163,
+            "character": 28
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__FetchContent_getSavedDetails": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1214,
+            "character": 9
+          },
+          "end": {
+            "line": 1214,
+            "character": 39
+          }
+        }
+      },
+      "document_info": "defined function\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\nearlier call to __FetchContent_declareDetails().",
+      "is_function": true
+    },
+    "subCMakeOpts": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1584,
+            "character": 8
+          },
+          "end": {
+            "line": 1584,
+            "character": 20
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "FETCHCONTENT_UPDATES_DISCONNECTED_${contentNameUpper}": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1797,
+            "character": 11
+          },
+          "end": {
+            "line": 1797,
+            "character": 64
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\nupdate test (either one being set disables updates for this content).",
+      "is_function": false
+    },
+    "CMAKE_EXPORT_COMPILE_COMMANDS": {
+      "location": {
+        "uri": "file:///home/jabol/Desktop/3DGS/CPU_gaussian_renderer/CMakeLists.txt",
+        "range": {
+          "start": {
+            "line": 7,
+            "character": 4
+          },
+          "end": {
+            "line": 7,
+            "character": 33
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /home/jabol/Desktop/3DGS/CPU_gaussian_renderer/CMakeLists.txt",
+      "is_function": false
+    },
+    "FetchContent_Populate": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1691,
+            "character": 9
+          },
+          "end": {
+            "line": 1691,
+            "character": 30
+          }
+        }
+      },
+      "document_info": "defined function\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\nan earlier call to FetchContent_Declare().",
+      "is_function": true
+    },
+    "__sawQuietKeyword": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1153,
+            "character": 12
+          },
+          "end": {
+            "line": 1153,
+            "character": 29
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "${ARG_SOURCE_DIR}": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1451,
+            "character": 10
+          },
+          "end": {
+            "line": 1451,
+            "character": 27
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "CMAKE_VERIFY_INTERFACE_HEADER_SETS": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 2079,
+            "character": 6
+          },
+          "end": {
+            "line": 2079,
+            "character": 40
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__FETCHCONTENT_CACHED_INFO": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1614,
+            "character": 6
+          },
+          "end": {
+            "line": 1614,
+            "character": 32
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__passthrough_vars": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1615,
+            "character": 6
+          },
+          "end": {
+            "line": 1615,
+            "character": 24
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "options": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1481,
+            "character": 6
+          },
+          "end": {
+            "line": 1481,
+            "character": 13
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "ARG_POPULATED": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1442,
+            "character": 8
+          },
+          "end": {
+            "line": 1442,
+            "character": 21
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "${contentNameLower}_BINARY_DIR": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1844,
+            "character": 6
+          },
+          "end": {
+            "line": 1844,
+            "character": 36
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__cmake_srcdir": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 2044,
+            "character": 10
+          },
+          "end": {
+            "line": 2044,
+            "character": 24
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\nignored there.",
+      "is_function": false
+    },
+    "quietFlag": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1807,
+            "character": 10
+          },
+          "end": {
+            "line": 1807,
+            "character": 19
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__argsQuoted": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1361,
+            "character": 6
+          },
+          "end": {
+            "line": 1361,
+            "character": 18
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__cmdArgs": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1144,
+            "character": 6
+          },
+          "end": {
+            "line": 1144,
+            "character": 15
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "${outVar}": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1223,
+            "character": 6
+          },
+          "end": {
+            "line": 1223,
+            "character": 15
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "${ARG_BINARY_DIR}": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1459,
+            "character": 10
+          },
+          "end": {
+            "line": 1459,
+            "character": 27
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "FETCHCONTENT_SOURCE_DIR_${contentNameUpper}": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1745,
+            "character": 6
+          },
+          "end": {
+            "line": 1745,
+            "character": 49
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "configFilePrefix2": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1873,
+            "character": 6
+          },
+          "end": {
+            "line": 1873,
+            "character": 23
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "prefix": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1445,
+            "character": 6
+          },
+          "end": {
+            "line": 1445,
+            "character": 12
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "multiValueArgs": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1509,
+            "character": 6
+          },
+          "end": {
+            "line": 1509,
+            "character": 20
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "${contentName}_DIR": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1892,
+            "character": 6
+          },
+          "end": {
+            "line": 1892,
+            "character": 24
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__detailsQuoted": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1812,
+            "character": 8
+          },
+          "end": {
+            "line": 1812,
+            "character": 23
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "ARG_SOURCE_DIR": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1523,
+            "character": 8
+          },
+          "end": {
+            "line": 1523,
+            "character": 22
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake",
+      "is_function": false
+    },
+    "__findPackageArgs": {
+      "location": {
+        "uri": "file:///usr/share/cmake-3.28/Modules/FetchContent.cmake",
+        "range": {
+          "start": {
+            "line": 1171,
+            "character": 10
+          },
+          "end": {
+            "line": 1171,
+            "character": 27
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /usr/share/cmake-3.28/Modules/FetchContent.cmake\n\npackage name and there may not need to be any further arguments.",
+      "is_function": false
+    }
+  }
+}

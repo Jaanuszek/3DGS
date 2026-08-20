@@ -26,6 +26,7 @@ target_sources(core_lib
   PRIVATE
     src/gaussian.cpp
     src/ppm.cpp
+    src/projection.cpp
   PUBLIC
     FILE_SET HEADERS
     BASE_DIRS
@@ -33,6 +34,7 @@ target_sources(core_lib
     FILES
       include/gaussian.hpp
       include/ppm.hpp
+      include/projection.hpp
 )
 
 add_executable(${PROJECT_NAME})
