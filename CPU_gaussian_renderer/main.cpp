@@ -1,7 +1,12 @@
+#include "glm/fwd.hpp"
 #include "ppm.hpp"
 #include "gaussian.hpp"
 #include "projection.hpp"
 #include <iostream>
+
+#include "glm/gtc/quaternion.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/string_cast.hpp"
 
 
 
@@ -58,6 +63,28 @@ int main()
     );
 
     glm::mat2 invCov = glm::inverse(covariance);
+
+
+    // create covariance matrix from scale matrix and rotation matrix
+    // In paper rotation matrix is taken from quaternion
+
+    glm::vec3 euler(1.0f, 1.0f, 1.0f);
+
+    // quaternion ha to be normalized (pure rotation quaternion has to have length of 1 ||q|| = 1)
+    glm::quat norm_rotation_q = glm::normalize(glm::quat(euler));
+
+    // from quaterinion to 3x3 matrix
+    glm::mat3x3 rotation_m = glm::mat3_cast(norm_rotation_q);
+
+    // rotation is stored in vector, but it is converted to matrix
+    glm::mat3x3 scale_m{};
+    scale_m[0][0] = 1.0f;
+    scale_m[1][1] = 1.0f;
+    scale_m[2][2] = 1.0f;
+
+    glm::mat3x3 covariance_m = rotation_m * scale_m * glm::transpose(scale_m) * glm::transpose(rotation_m);
+
+    std::cout << glm::to_string(covariance_m) << std::endl;
 
     std::ofstream file("image.ppm", std::ios::binary);
 
