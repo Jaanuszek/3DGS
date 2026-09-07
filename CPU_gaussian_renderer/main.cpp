@@ -99,6 +99,12 @@ int main()
     float fx = projectionMat[0][0] * WIDHT * 0.5f;
     float fy = projectionMat[1][1] * HEIGHT * 0.5f;
 
+    glm::vec3 cameraPos = glm::vec3(0.0f, 2.0f, 0.0f);
+    glm::vec3 targetPos = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 globalUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+    auto myLookAt = My::lookAt(cameraPos, targetPos, globalUp);
+
     std::ofstream file("image.ppm", std::ios::binary);
 
     file << "P6\n";

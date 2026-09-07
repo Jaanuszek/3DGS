@@ -1,11 +1,11 @@
 #pragma once
 
+#include "glm/glm.hpp"
 #include <array>
 
 // 1st my own impl
 namespace My
 {
-
     template<typename T, std::size_t N>
     struct vec
     {
@@ -28,4 +28,6 @@ namespace My
         }
         // void mul(const vec4<T>& vec);
     };
+
+    glm::mat4 lookAt(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up);
 }
