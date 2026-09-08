@@ -11,9 +11,10 @@
 
 int main()
 {
-    constexpr int WIDHT = 1920;
-    constexpr int HEIGHT = 1080;
-    constexpr float FOV = static_cast<float>(WIDHT) / static_cast<float>(HEIGHT);
+    constexpr int WIDHT = 800;
+    constexpr int HEIGHT = 600;
+    constexpr float FOV = 90.0f;
+    constexpr float ASPECT_RATIO = static_cast<float>(WIDHT) / static_cast<float>(HEIGHT);
     constexpr float NEAR = 0.1f;
     constexpr float FAR = 100.0f;
 
@@ -86,8 +87,8 @@ int main()
     std::cout << glm::to_string(covariance_m) << std::endl;
 
     glm::mat4 projectionMat = glm::perspective(
-        glm::radians(45.0f),
-        FOV,
+        glm::radians(FOV),
+        ASPECT_RATIO,
         NEAR,
         FAR
     );
@@ -99,11 +100,47 @@ int main()
     float fx = projectionMat[0][0] * WIDHT * 0.5f;
     float fy = projectionMat[1][1] * HEIGHT * 0.5f;
 
-    glm::vec3 cameraPos = glm::vec3(0.0f, 2.0f, 0.0f);
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 targetPos = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 globalUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
     auto myLookAt = My::lookAt(cameraPos, targetPos, globalUp);
+    // auto lookAt = glm::lookAt(cameraPos, targetPos, globalUp);
+    std::cout << glm::to_string(myLookAt) << std::endl;
+    // glm::mat3 rotLookAt =
+
+    glm::vec3 pointL(0.0f, 0.0f, -20.0f);
+
+    glm::vec4 pointCam = myLookAt * glm::vec4(pointL, 1.0f);
+
+    glm::vec4 pointProj = projectionMat * pointCam;
+
+    glm::vec2 pointNDC(pointProj.x/pointProj.w, pointProj.y/pointProj.w);
+
+    glm::vec2 pointScreen(
+        (pointNDC.x + 1.0f) / 2.0f * WIDHT,
+        (1.0f - pointNDC.y) / 2.0f * HEIGHT
+    );
+
+    std::cout << "CAM: "
+              << pointCam.x << " "
+              << pointCam.y << " "
+              << pointCam.z << " "
+              << pointCam.w << "\n";
+
+    std::cout << "CLIP: "
+              << pointProj.x << " "
+              << pointProj.y << " "
+              << pointProj.z << " "
+              << pointProj.w << "\n";
+
+    std::cout << "NDC: "
+              << pointProj.x / pointProj.w << " "
+              << pointProj.y / pointProj.w << "\n";
+
+    constexpr int RADIUS = 3;
+    float radiusScreen = RADIUS * fy / -pointCam.z;
+    std::cout << "X: " << pointScreen.x << " Y: " << pointScreen.y << std::endl;
 
     std::ofstream file("image.ppm", std::ios::binary);
 
@@ -120,29 +157,48 @@ int main()
             float y = 2.0f * (h + 0.5f) / static_cast<float>(HEIGHT - 1) - 1.0f;
             float z = 0;
 
-            const float S = 1.0 / (z * z);
-            // glm::mat2x3 2 columns 3 rows
-            glm::mat2x3 J = glm::mat2x3(
-                fx / z, 0, -(fx * x) * S,
-                0, fy / z, -(fy * y) * S
-            );
+            pixel pix;
 
-            // std::cout << glm::to_string(J) << std::endl;
+            std::uint8_t bg_color = 255U;
 
-            glm::vec2 p(x,y);
+            int dx = w - static_cast<int>(pointScreen.x);
+            int dy = h - static_cast<int>(pointScreen.y);
 
-            glm::vec2 d = p - mean;
+            if(dx * dx + dy * dy <= radiusScreen * radiusScreen)
+            {
+                pix = {255U, 0U, 0U};
+            }
+            else
+            {
+                pix = {255U, 255U, 255U};
+            }
+            // const float S = 1.0 / (z * z);
+            // // glm::mat2x3 2 columns 3 rows
+            // glm::mat2x3 J = glm::mat2x3(
+            //     fx / z, 0, -(fx * x) * S,
+            //     0, fy / z, -(fy * y) * S
+            // );
 
-            // d^T * Sigma^-1 * d
-            float q = glm::dot(d, invCov * d);
+            // // std::cout << glm::to_string(J) << std::endl;
 
-            float density = std::exp(-0.5f * q);
+            // glm::vec2 p(x,y);
 
-            int c_int = static_cast<int>(255.0f * density);
-            std::uint8_t c_uint = static_cast<std::uint8_t>(c_int);
+            // glm::vec2 d = p - mean;
 
-            pixel pix = {c_uint,c_uint,c_uint};
+            // // d^T * Sigma^-1 * d
+            // float q = glm::dot(d, invCov * d);
 
+            // float density = std::exp(-0.5f * q);
+
+            // int c_int = static_cast<int>(255.0f * density);
+            // std::uint8_t c_uint = static_cast<std::uint8_t>(c_int);
+
+            // if(h == static_cast<int>(pointScreen.y) && w == static_cast<int>(pointScreen.x))
+            // {
+            //     bg_color = 0U;
+            // }
+            // pixel pix = {c_uint,c_uint,c_uint};
+            // pixel pix = {bg_color, bg_color, bg_color};
             file.write(
                 reinterpret_cast<const char*>(&pix),
                 sizeof(pixel)
