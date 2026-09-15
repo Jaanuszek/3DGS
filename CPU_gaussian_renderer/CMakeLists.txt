@@ -27,6 +27,7 @@ target_sources(core_lib
     src/gaussian.cpp
     src/ppm.cpp
     src/projection.cpp
+    src/camera.cpp
   PUBLIC
     FILE_SET HEADERS
     BASE_DIRS

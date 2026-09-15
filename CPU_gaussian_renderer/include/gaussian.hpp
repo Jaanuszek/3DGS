@@ -1,25 +1,37 @@
 #pragma once
 
+#include "camera.hpp"
+#include "glm/detail/qualifier.hpp"
 #include "ppm.hpp"
+#include "glm/ext/quaternion_common.hpp"
 #include "glm/glm.hpp"
+#include "glm/gtc/quaternion.hpp""
 
 #include <vector>
 #include <array>
+#include <memory>
 
-struct Gaussian
+namespace GS
 {
-    // Covariance matrix should not be fixed
-    // it supposed to be computed on the fly (answer is in the paper)
-    // but for the simplicity, I will not compute it there XD
-    glm::mat3 cov; // Covariance matrix
-    glm::vec3 pos; // centre point
-    glm::vec3 col; // color
-    float alpha;
-};
+    class Gaussian
+    {
+        public:
+            Gaussian(std::shared_ptr<GS::Camera> camera, const glm::vec3& pos);
 
-int foo();
+            void applyRotation(float angle, const glm::vec3& axis);
 
-// This funcion will return gaussian color for given pixel index
-pixel getGaussianValue(uint32_t idx);
+        private:
+            void computeCovariance();
 
-void projectGaussian(const Gaussian& g, const glm::mat4 &proj);
+        private:
+            glm::mat3 cov; // Covariance matrix
+            glm::mat3 rotation_m;
+            glm::mat3 scale_m;
+            glm::mat2 cov_pix;
+            glm::quat rot_q = glm::quat(1,0,0,0);
+            glm::vec3 pos; // centre point
+            glm::vec3 col; // color
+            glm::vec2 pos_pix;
+            float alpha;
+    };
+}
