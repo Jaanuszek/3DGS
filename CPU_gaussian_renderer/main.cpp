@@ -26,41 +26,27 @@ int main()
 
     camera->init(cameraPos, targetPos);
 
-    // create covariance matrix from scale matrix and rotation matrix
-    // In paper rotation matrix is taken from quaternion
-    glm::vec3 euler(1.0f, 1.0f, 1.0f);
-
-    // quaternion ha to be normalized (pure rotation quaternion has to have length of 1 ||q|| = 1)
-    glm::quat norm_rotation_q = glm::normalize(glm::quat(euler));
-
-    // from quaterinion to 3x3 matrix
-    glm::mat3x3 rotation_m = glm::mat3_cast(norm_rotation_q);
-
-    // rotation is stored in vector, but it is converted to matrix
     glm::mat3x3 scale_m{};
     scale_m[0][0] = 1.0f;
     scale_m[1][1] = 1.0f;
     scale_m[2][2] = 1.0f;
 
-    glm::mat3x3 covariance_m = rotation_m * scale_m * glm::transpose(scale_m) * glm::transpose(rotation_m);
-
     glm::vec3 pointL(0.0f, 0.0f, -10.0f);
+    glm::vec3 point2(5.0f, 5.0f, -30.0f);
+    glm::vec3 point3(-5.0f, -5.0f, -10.0f);
+    glm::vec3 point4(-5.0f, 5.0f, -20.0f);
 
-    glm::vec4 pointCam = camera->mulView(glm::vec4(pointL, 1.0f));
-    glm::vec4 pointProj = camera->mulProj(pointCam);
-    glm::vec2 pointNDC = camera->perspectiveDivision(pointProj);
-    glm::vec2 pointScreen = camera->NDCtoPixel(pointNDC);
+    GS::Gaussian gs1(camera, pointL, scale_m);
+    GS::Gaussian gs2(camera, point2, scale_m);
+    GS::Gaussian gs3(camera, point3, scale_m);
+    GS::Gaussian gs4(camera, point4, scale_m);
 
-    glm::mat3x2 J = camera->computeJacobian(pointCam);
-    glm::mat3 rotMatrix(camera->getviewMat());
-
-    // manually created these 3 steps, just because final result will be glm::mat2
-    // but covarianceView mat3. It's propably not necessery
-    glm::mat3 covarianceView = rotMatrix * covariance_m * glm::transpose(rotMatrix);
-
-    glm::mat2 covariancePixel = J * covarianceView * glm::transpose(J);
-
-    glm::mat2 invCovariancePixel = glm::inverse(covariancePixel);
+    std::array<GS::Gaussian, 4> gaussians= {
+      gs1,
+      gs2,
+      gs3,
+      gs4
+    };
 
     std::ofstream file("image.ppm", std::ios::binary);
 
@@ -78,19 +64,24 @@ int main()
 
             glm::vec2 p(w + 0.5f, h + 0.5f);
 
-            glm::vec2 d = p - pointScreen;
-
-            // d^T * Sigma^-1 * d
-            float q = glm::dot(d, invCovariancePixel * d);
-
-            float density = std::exp(-0.5f * q);
-
-            int c_int = static_cast<int>(255.0f * density);
-            std::uint8_t c_uint = static_cast<std::uint8_t>(c_int);
-
-            if(h == static_cast<int>(pointScreen.y) && w == static_cast<int>(pointScreen.x))
+            std::uint8_t c_uint;
+            for(auto gauss : gaussians)
             {
-                bg_color = 0U;
+                glm::vec2 gaussPoint = gauss.getPosPix();
+                glm::vec2 d = p - gaussPoint;
+
+                // d^T * Sigma^-1 * d
+                float q = glm::dot(d, gauss.getInvCovPix() * d);
+
+                float density = std::exp(-0.5f * q);
+
+                int c_int = static_cast<int>(255.0f * density);
+                c_uint = static_cast<std::uint8_t>(c_int);
+
+                if(h == static_cast<int>(gaussPoint.y) && w == static_cast<int>(gaussPoint.x))
+                {
+                    bg_color = 0U;
+                }
             }
             pix = {c_uint,c_uint,c_uint};
             file.write(
