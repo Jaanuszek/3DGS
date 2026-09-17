@@ -32,7 +32,7 @@ int main()
     scale_m[2][2] = 1.0f;
 
     glm::vec3 pointL(0.0f, 0.0f, -10.0f);
-    glm::vec3 point2(5.0f, 5.0f, -30.0f);
+    glm::vec3 point2(5.0f, 5.0f, -5.0f);
     glm::vec3 point3(-5.0f, -5.0f, -10.0f);
     glm::vec3 point4(-5.0f, 5.0f, -20.0f);
 
@@ -47,6 +47,8 @@ int main()
       gs3,
       gs4
     };
+
+    std::vector<float> framebuffer(WIDHT*HEIGHT, 0.0f);
 
     std::ofstream file("image.ppm", std::ios::binary);
 
@@ -65,11 +67,12 @@ int main()
             glm::vec2 p(w + 0.5f, h + 0.5f);
 
             std::uint8_t c_uint;
+            std::uint16_t color_accumulated = 1;
             for(auto gauss : gaussians)
             {
                 glm::vec2 gaussPoint = gauss.getPosPix();
                 glm::vec2 d = p - gaussPoint;
-
+                int index = h * WIDHT + w;
                 // d^T * Sigma^-1 * d
                 float q = glm::dot(d, gauss.getInvCovPix() * d);
 
@@ -77,12 +80,15 @@ int main()
 
                 int c_int = static_cast<int>(255.0f * density);
                 c_uint = static_cast<std::uint8_t>(c_int);
+                color_accumulated += static_cast<std::uint16_t>(c_int);
+
 
                 if(h == static_cast<int>(gaussPoint.y) && w == static_cast<int>(gaussPoint.x))
                 {
                     bg_color = 0U;
                 }
             }
+            c_uint = (color_accumulated > 255) ? 255 : color_accumulated;
             pix = {c_uint,c_uint,c_uint};
             file.write(
                 reinterpret_cast<const char*>(&pix),
