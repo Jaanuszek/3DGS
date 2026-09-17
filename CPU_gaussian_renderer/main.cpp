@@ -68,7 +68,7 @@ int main()
 
             std::uint8_t c_uint;
             std::uint16_t color_accumulated = 1;
-            for(auto gauss : gaussians)
+            for(const auto& gauss : gaussians)
             {
                 glm::vec2 gaussPoint = gauss.getPosPix();
                 glm::vec2 d = p - gaussPoint;

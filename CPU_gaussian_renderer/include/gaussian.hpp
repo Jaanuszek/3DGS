@@ -20,8 +20,8 @@ namespace GS
 
             void applyRotation(float angle, const glm::vec3& axis);
 
-            const glm::mat2& getInvCovPix() { return this->inv_cov_pix; }
-            const glm::vec2& getPosPix() { return this->pos_pix; }
+            const glm::mat2& getInvCovPix() const { return this->inv_cov_pix; }
+            const glm::vec2& getPosPix() const { return this->pos_pix; }
 
         private:
             void computeCovariance();
