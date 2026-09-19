@@ -9,6 +9,7 @@
 #include <vector>
 #include <array>
 #include <memory>
+#include <algorithm>
 
 namespace GS
 {
@@ -16,16 +17,19 @@ namespace GS
     {
         public:
             Gaussian(std::shared_ptr<GS::Camera> camera,
-                const glm::vec3& pos, const glm::mat3& scale);
+                const glm::vec3& pos, const glm::mat3& scale,
+                const glm::vec3& col, const float alpha);
 
             void applyRotation(float angle, const glm::vec3& axis);
 
             const glm::mat2& getInvCovPix() const { return this->inv_cov_pix; }
             const glm::vec2& getPosPix() const { return this->pos_pix; }
+            const glm::vec3& getColor() const { return this->col; }
+            const float& getAlpha() const { return this->alpha; }
 
         private:
             void computeCovariance();
-            glm::mat3 computeCovarianceView();
+            glm::mat3 computeCovarianceView(const glm::mat3& view_roatation_m);
         private:
             glm::mat3 cov; // Covariance matrix
             glm::mat3 rotation_m;

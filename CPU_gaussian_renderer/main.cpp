@@ -6,6 +6,7 @@
 #include "camera.hpp"
 #include <iostream>
 #include <memory>
+#include <numbers>
 
 #include "glm/gtc/quaternion.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
@@ -36,10 +37,10 @@ int main()
     glm::vec3 point3(-5.0f, -5.0f, -10.0f);
     glm::vec3 point4(-5.0f, 5.0f, -20.0f);
 
-    GS::Gaussian gs1(camera, pointL, scale_m);
-    GS::Gaussian gs2(camera, point2, scale_m);
-    GS::Gaussian gs3(camera, point3, scale_m);
-    GS::Gaussian gs4(camera, point4, scale_m);
+    GS::Gaussian gs1(camera, pointL, scale_m, glm::vec3(1.0f, 0.0f, 0.0f), 0.5f);
+    GS::Gaussian gs2(camera, pointL, scale_m, glm::vec3(0.0f, 1.0f, 0.0f), 1.0f);
+    GS::Gaussian gs3(camera, point3, scale_m, glm::vec3(0.0f, 0.0f, 1.0f), 1.0f);
+    GS::Gaussian gs4(camera, point4, scale_m, glm::vec3(1.0f, 0.0f, 1.0f), 0.8f);
 
     std::array<GS::Gaussian, 4> gaussians= {
       gs1,
@@ -66,30 +67,33 @@ int main()
 
             glm::vec2 p(w + 0.5f, h + 0.5f);
 
-            std::uint8_t c_uint;
-            std::uint16_t color_accumulated = 1;
+            glm::vec3 pix_col(0.0f);
+            float T = 1.0f;
             for(const auto& gauss : gaussians)
             {
                 glm::vec2 gaussPoint = gauss.getPosPix();
                 glm::vec2 d = p - gaussPoint;
-                int index = h * WIDHT + w;
+
                 // d^T * Sigma^-1 * d
                 float q = glm::dot(d, gauss.getInvCovPix() * d);
 
-                float density = std::exp(-0.5f * q);
+                float density = std::exp(-0.5f * q) * gauss.getAlpha();
 
-                int c_int = static_cast<int>(255.0f * density);
-                c_uint = static_cast<std::uint8_t>(c_int);
-                color_accumulated += static_cast<std::uint16_t>(c_int);
-
-
-                if(h == static_cast<int>(gaussPoint.y) && w == static_cast<int>(gaussPoint.x))
+                pix_col += T * density * gauss.getColor();
+                T *= (1.0f - density);
+                if(T < 0.001f)
                 {
-                    bg_color = 0U;
+                    break;
                 }
             }
-            c_uint = (color_accumulated > 255) ? 255 : color_accumulated;
-            pix = {c_uint,c_uint,c_uint};
+
+            glm::vec3 background(1.0f);
+            pix_col = glm::clamp(pix_col, 0.0f, 1.0f) + T * background;
+            pix = {
+                static_cast<uint8_t>(pix_col.r * 255.0f),
+                static_cast<uint8_t>(pix_col.g * 255.0f),
+                static_cast<uint8_t>(pix_col.b * 255.0f)
+            };
             file.write(
                 reinterpret_cast<const char*>(&pix),
                 sizeof(pixel)
