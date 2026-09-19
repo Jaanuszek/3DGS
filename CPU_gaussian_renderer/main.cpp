@@ -33,12 +33,12 @@ int main()
     scale_m[2][2] = 1.0f;
 
     glm::vec3 pointL(0.0f, 0.0f, -10.0f);
-    glm::vec3 point2(5.0f, 5.0f, -5.0f);
-    glm::vec3 point3(-5.0f, -5.0f, -10.0f);
-    glm::vec3 point4(-5.0f, 5.0f, -20.0f);
+    glm::vec3 point2(1.0f, 1.0f, -10.0f);
+    glm::vec3 point3(-5.0f, -5.0f, -5.0f);
+    glm::vec3 point4(-5.0f, 5.0f, -10.0f);
 
-    GS::Gaussian gs1(camera, pointL, scale_m, glm::vec3(1.0f, 0.0f, 0.0f), 0.5f);
-    GS::Gaussian gs2(camera, pointL, scale_m, glm::vec3(0.0f, 1.0f, 0.0f), 1.0f);
+    GS::Gaussian gs1(camera, pointL, scale_m, glm::vec3(1.0f, 0.0f, 0.0f), 1.5f);
+    GS::Gaussian gs2(camera, point2, scale_m, glm::vec3(0.0f, 1.0f, 0.0f), 1.0f);
     GS::Gaussian gs3(camera, point3, scale_m, glm::vec3(0.0f, 0.0f, 1.0f), 1.0f);
     GS::Gaussian gs4(camera, point4, scale_m, glm::vec3(1.0f, 0.0f, 1.0f), 0.8f);
 
@@ -49,7 +49,13 @@ int main()
       gs4
     };
 
-    std::vector<float> framebuffer(WIDHT*HEIGHT, 0.0f);
+    std::sort(
+      gaussians.begin(),
+      gaussians.end(),
+      [](const GS::Gaussian& g1, const GS::Gaussian& g2){
+          return g1.getDepth() < g2.getDepth();
+      }
+    );
 
     std::ofstream file("image.ppm", std::ios::binary);
 
@@ -67,7 +73,7 @@ int main()
 
             glm::vec2 p(w + 0.5f, h + 0.5f);
 
-            glm::vec3 pix_col(0.0f);
+            glm::vec3 c(0.0f);
             float T = 1.0f;
             for(const auto& gauss : gaussians)
             {
@@ -77,22 +83,35 @@ int main()
                 // d^T * Sigma^-1 * d
                 float q = glm::dot(d, gauss.getInvCovPix() * d);
 
-                float density = std::exp(-0.5f * q) * gauss.getAlpha();
+                float density = std::exp(-0.5f * q);
 
-                pix_col += T * density * gauss.getColor();
-                T *= (1.0f - density);
-                if(T < 0.001f)
-                {
+                // From paper ai is given by evaluating a 2D Gaussian (`density`)
+                // multiplied with learned per-pont opacity => density * opacity
+                float alpha = std::min(0.99f, density * gauss.getOpacity());
+
+                if(alpha < 1.0f / 255.0f)
+                    continue;
+
+                // Test variable to check if Transmittance is on sufficient level
+                float test_T = T * (1.0f - alpha);
+
+                if(test_T < 0.0001f)
                     break;
-                }
+
+                // Right now test_T is T_i+1, while T is T_i
+                // So firstly we calculate color, then update T
+                // T -> T_(i)
+                // test_T -> T_(i+1)
+                c += gauss.getColor() * alpha * T;
+                T = test_T;
             }
 
-            glm::vec3 background(1.0f);
-            pix_col = glm::clamp(pix_col, 0.0f, 1.0f) + T * background;
+            glm::vec3 background(0.0f);
+            c = glm::clamp(c + T * background, 0.0f, 1.0f);
             pix = {
-                static_cast<uint8_t>(pix_col.r * 255.0f),
-                static_cast<uint8_t>(pix_col.g * 255.0f),
-                static_cast<uint8_t>(pix_col.b * 255.0f)
+                static_cast<uint8_t>(c.r * 255.0f),
+                static_cast<uint8_t>(c.g * 255.0f),
+                static_cast<uint8_t>(c.b * 255.0f)
             };
             file.write(
                 reinterpret_cast<const char*>(&pix),
