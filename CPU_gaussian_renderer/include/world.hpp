@@ -47,11 +47,15 @@ namespace GS{
           World& operator=(const World&) = delete;
           World& operator=(World&&) = delete;
 
+          void reserveGaussians(std::size_t count){ gaussians.reserve(count); }
+
           void addGaussian(const Gaussian& g);
+
+          void addGaussian_wo_sorting(Gaussian g);
 
           void addGaussians(std::vector<Gaussian>&& g_arr);
 
-          void sortGuassians();
+          void sortGaussians();
 
           const std::vector<Gaussian>& getGaussians() const
           {

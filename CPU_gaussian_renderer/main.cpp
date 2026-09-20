@@ -4,6 +4,7 @@
 #include "camera.hpp"
 #include <iostream>
 #include <memory>
+#include <random>
 #include "world.hpp"
 
 
@@ -12,6 +13,7 @@ int main()
     constexpr int WIDHT = 800;
     constexpr int HEIGHT = 600;
     constexpr float FOV = 90.0f;
+    constexpr uint32_t GAUSSIANS_COUNT = 100;
 
     std::shared_ptr<GS::Camera> camera = std::make_shared<GS::Camera>(
         WIDHT, HEIGHT, FOV
@@ -22,35 +24,49 @@ int main()
 
     camera->init(cameraPos, targetPos);
 
-    std::unique_ptr<GS::World> world;
+    GS::World world(camera);
 
-    glm::mat3x3 scale_m{};
-    scale_m[0][0] = 1.0f;
-    scale_m[1][1] = 1.0f;
-    scale_m[2][2] = 1.0f;
+    glm::mat3x3 scale_m(1.0f);
 
-    glm::vec3 pointL(0.0f, 0.0f, -15.0f);
-    glm::vec3 point2(1.0f, 1.0f, -5.0f);
-    glm::vec3 point3(-50.0f, -5.0f, -20.0f);
-    glm::vec3 point4(-5.0f, 5.0f, -30.0f);
+    std::random_device rd;
+    std::mt19937 gen(rd());
 
-    GS::Gaussian gs1(camera, pointL, scale_m, glm::vec3(1.0f, 0.0f, 0.0f), 1.5f);
-    GS::Gaussian gs2(camera, point2, scale_m, glm::vec3(0.0f, 1.0f, 0.0f), 0.5f);
-    GS::Gaussian gs3(camera, point3, scale_m, glm::vec3(0.0f, 0.0f, 1.0f), 1.0f);
-    GS::Gaussian gs4(camera, point4, scale_m, glm::vec3(1.0f, 0.0f, 1.0f), 0.8f);
+    std::uniform_real_distribution<float> dist_x(-10.0f, 10.0f);
+    std::uniform_real_distribution<float> dist_y(-10.0f, 10.0f);
+    std::uniform_real_distribution<float> dist_z(-30.0f, -5.0f);
+    std::uniform_real_distribution<float> dist_color(0.0f, 1.0f);
+    std::uniform_real_distribution<float> dist_opacity(0.0f, 1.0f);
 
-    std::vector<GS::Gaussian> gaussians= {
-      gs1,
-      gs2,
-      gs3,
-      gs4
-    };
+    world.reserveGaussians(GAUSSIANS_COUNT);
 
-    world = std::make_unique<GS::World>(camera, gaussians);
+    for(uint32_t i = 0; i < GAUSSIANS_COUNT; i++)
+    {
+        glm::vec3 position(
+            dist_x(gen),
+            dist_y(gen),
+            dist_z(gen)
+        );
 
-    world->addGaussian(GS::Gaussian(
-        camera, glm::vec3(5.0f, -5.0f, -5.0f), scale_m, glm::vec3(0.0f, 1.f, 1.f), 1.0f
-    ));
+        glm::vec3 color(
+            dist_color(gen),
+            dist_color(gen),
+            dist_color(gen)
+        );
+
+        float opacity = dist_opacity(gen);
+
+        world.addGaussian_wo_sorting(
+            GS::Gaussian(
+                camera,
+                position,
+                scale_m,
+                color,
+                opacity
+            )
+        );
+    }
+
+    world.sortGaussians();
 
     std::ofstream file("image.ppm", std::ios::binary);
 
@@ -70,7 +86,7 @@ int main()
 
             glm::vec3 c(0.0f);
             float T = 1.0f;
-            for(const auto& gauss : world->getGaussians())
+            for(const auto& gauss : world.getGaussians())
             {
                 // If gaussian mean point is not in clip space, then ommit it
                 if(!gauss.getIsRenderable())

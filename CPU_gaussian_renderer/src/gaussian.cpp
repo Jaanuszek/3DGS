@@ -23,8 +23,6 @@ namespace GS
 
         glm::vec4 pointCam = camera->mulView(glm::vec4(pos, 1.0f));
         glm::vec4 pointProj = camera->mulProj(pointCam);
-        glm::vec2 pointNDC = camera->perspectiveDivision(pointProj);
-        this->pos_pix = camera->NDCtoPixel(pointNDC);
 
         // It's not the greatest solution, since some gaussian point can be very near to clip space
         // and it's density may be visible from the camera point of view
@@ -33,12 +31,15 @@ namespace GS
         bool isVisible = pointProj.w > 0.0f && // to not divide by zero in perspective division
             pointProj.z >= -pointProj.w && // near
             pointProj.z <= pointProj.w && // far
-            pointNDC.x >= -1.0f && pointNDC.x <= 1.0f &&
-            pointNDC.y >= -1.0f && pointNDC.y <= 1.0f;
+            pointProj.x >= -pointProj.w && pointProj.x <= pointProj.w &&
+            pointProj.y >= -pointProj.w && pointProj.y <= pointProj.w;
         if(isVisible)
         {
             this->isRenderable = true;
         }
+
+        glm::vec2 pointNDC = camera->perspectiveDivision(pointProj);
+        this->pos_pix = camera->NDCtoPixel(pointNDC);
 
         this->J = camera->computeJacobian(pointCam);
 
