@@ -1,16 +1,11 @@
-#include "glm/ext/quaternion_common.hpp"
 #include "glm/fwd.hpp"
-#include "glm/matrix.hpp"
 #include "ppm.hpp"
 #include "gaussian.hpp"
 #include "camera.hpp"
 #include <iostream>
 #include <memory>
-#include <numbers>
+#include "world.hpp"
 
-#include "glm/gtc/quaternion.hpp"
-#define GLM_ENABLE_EXPERIMENTAL
-#include "glm/gtx/string_cast.hpp"
 
 int main()
 {
@@ -27,35 +22,35 @@ int main()
 
     camera->init(cameraPos, targetPos);
 
+    std::unique_ptr<GS::World> world;
+
     glm::mat3x3 scale_m{};
     scale_m[0][0] = 1.0f;
     scale_m[1][1] = 1.0f;
     scale_m[2][2] = 1.0f;
 
-    glm::vec3 pointL(0.0f, 0.0f, -10.0f);
-    glm::vec3 point2(1.0f, 1.0f, -10.0f);
-    glm::vec3 point3(-5.0f, -5.0f, -5.0f);
-    glm::vec3 point4(-5.0f, 5.0f, -10.0f);
+    glm::vec3 pointL(0.0f, 0.0f, -15.0f);
+    glm::vec3 point2(1.0f, 1.0f, -5.0f);
+    glm::vec3 point3(-50.0f, -5.0f, -20.0f);
+    glm::vec3 point4(-5.0f, 5.0f, -30.0f);
 
     GS::Gaussian gs1(camera, pointL, scale_m, glm::vec3(1.0f, 0.0f, 0.0f), 1.5f);
-    GS::Gaussian gs2(camera, point2, scale_m, glm::vec3(0.0f, 1.0f, 0.0f), 1.0f);
+    GS::Gaussian gs2(camera, point2, scale_m, glm::vec3(0.0f, 1.0f, 0.0f), 0.5f);
     GS::Gaussian gs3(camera, point3, scale_m, glm::vec3(0.0f, 0.0f, 1.0f), 1.0f);
     GS::Gaussian gs4(camera, point4, scale_m, glm::vec3(1.0f, 0.0f, 1.0f), 0.8f);
 
-    std::array<GS::Gaussian, 4> gaussians= {
+    std::vector<GS::Gaussian> gaussians= {
       gs1,
       gs2,
       gs3,
       gs4
     };
 
-    std::sort(
-      gaussians.begin(),
-      gaussians.end(),
-      [](const GS::Gaussian& g1, const GS::Gaussian& g2){
-          return g1.getDepth() < g2.getDepth();
-      }
-    );
+    world = std::make_unique<GS::World>(camera, gaussians);
+
+    world->addGaussian(GS::Gaussian(
+        camera, glm::vec3(5.0f, -5.0f, -5.0f), scale_m, glm::vec3(0.0f, 1.f, 1.f), 1.0f
+    ));
 
     std::ofstream file("image.ppm", std::ios::binary);
 
@@ -75,8 +70,14 @@ int main()
 
             glm::vec3 c(0.0f);
             float T = 1.0f;
-            for(const auto& gauss : gaussians)
+            for(const auto& gauss : world->getGaussians())
             {
+                // If gaussian mean point is not in clip space, then ommit it
+                if(!gauss.getIsRenderable())
+                {
+                    continue;
+                }
+
                 glm::vec2 gaussPoint = gauss.getPosPix();
                 glm::vec2 d = p - gaussPoint;
 

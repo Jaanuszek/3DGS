@@ -27,6 +27,7 @@ namespace GS
             const glm::vec3& getColor() const { return this->col; }
             const float& getOpacity() const { return this->opacity; }
             const float& getDepth() const { return this->depth; }
+            const bool& getIsRenderable() const { return this->isRenderable; }
 
         private:
             void computeCovariance();
@@ -44,5 +45,7 @@ namespace GS
             glm::vec2 pos_pix;
             float opacity;
             float depth;
+
+            bool isRenderable = false; // Is it visible in clip space?
     };
 }
