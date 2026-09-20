@@ -28,6 +28,7 @@ target_sources(core_lib
     src/ppm.cpp
     src/projection.cpp
     src/camera.cpp
+    src/world.cpp
   PUBLIC
     FILE_SET HEADERS
     BASE_DIRS
