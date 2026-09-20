@@ -5,6 +5,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <iostream>
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/string_cast.hpp"
 
 namespace GS
@@ -23,15 +24,17 @@ namespace GS
         glm::vec4 pointCam = camera->mulView(glm::vec4(pos, 1.0f));
         glm::vec4 pointProj = camera->mulProj(pointCam);
         glm::vec2 pointNDC = camera->perspectiveDivision(pointProj);
-        std::cout << glm::to_string(pointNDC) << std::endl;
         this->pos_pix = camera->NDCtoPixel(pointNDC);
 
         // It's not the greatest solution, since some gaussian point can be very near to clip space
         // and it's density may be visible from the camera point of view
         // So the improvement might be just adding gaussian distribution check in isVisible bool
         // to check wether this specific density is visible on the display.
-        bool isVisible = pointNDC.x >= -1.0f && pointNDC.x <= 1.0f &&
-                        pointNDC.y >= -1.0f && pointNDC.y <= 1.0f;
+        bool isVisible = pointProj.w > 0.0f && // to not divide by zero in perspective division
+            pointProj.z >= -pointProj.w && // near
+            pointProj.z <= pointProj.w && // far
+            pointNDC.x >= -1.0f && pointNDC.x <= 1.0f &&
+            pointNDC.y >= -1.0f && pointNDC.y <= 1.0f;
         if(isVisible)
         {
             this->isRenderable = true;

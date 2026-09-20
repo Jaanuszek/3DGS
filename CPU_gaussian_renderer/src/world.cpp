@@ -26,7 +26,11 @@ namespace GS
 
     void World::addGaussians(std::vector<Gaussian>&& g_arr)
     {
-        gaussians = std::move(g_arr);
+        for(auto& g : g_arr)
+        {
+            gaussians.push_back(std::move(g));
+        }
+        sortGuassians();
     }
 
     void World::sortGuassians()
