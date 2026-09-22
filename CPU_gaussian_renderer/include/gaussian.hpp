@@ -13,6 +13,14 @@
 
 namespace GS
 {
+    struct BoundingBox
+    {
+        int minX,
+            maxX,
+            minY,
+            maxY;
+    };
+
     class Gaussian
     {
         public:
@@ -21,6 +29,8 @@ namespace GS
                 const glm::vec3& col, const float opacity);
 
             void applyRotation(float angle, const glm::vec3& axis);
+
+            BoundingBox getBoundingBox(int width, int height) const;
 
             const glm::mat2& getInvCovPix() const { return this->inv_cov_pix; }
             const glm::vec2& getPosPix() const { return this->pos_pix; }
@@ -40,6 +50,7 @@ namespace GS
             glm::mat3x2 J;
             glm::mat2 inv_cov_pix; // covariance in pixel (after jacobian multiplication)
             glm::quat rot_q = glm::quat(1,0,0,0);
+            BoundingBox bb;
             glm::vec3 pos; // centre point
             glm::vec3 col; // color
             glm::vec2 pos_pix;

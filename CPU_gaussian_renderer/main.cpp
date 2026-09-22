@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 #include <random>
+#include <chrono>
 #include "world.hpp"
 
 
@@ -39,6 +40,7 @@ int main()
 
     world.reserveGaussians(GAUSSIANS_COUNT);
 
+    auto start = std::chrono::high_resolution_clock::now();
     for(uint32_t i = 0; i < GAUSSIANS_COUNT; i++)
     {
         glm::vec3 position(
@@ -65,8 +67,16 @@ int main()
             )
         );
     }
+    auto end = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+
+    std::cout << "Generating gaussians time: " << elapsed.count() << std::endl;
 
     world.sortGaussians();
+
+    std::vector<pixel> image;
+    image.resize(WIDHT * HEIGHT);
 
     std::ofstream file("image.ppm", std::ios::binary);
 
@@ -74,11 +84,13 @@ int main()
     file << WIDHT << " " << HEIGHT << '\n';
     file << "255\n";
 
+    start = std::chrono::high_resolution_clock::now();
     for(int h = 0; h < HEIGHT; h++)
     {
         for(int w = 0; w < WIDHT; w++)
         {
-            pixel pix;
+            std::size_t idx = h * WIDHT + w;
+            // pixel pix;
 
             std::uint8_t bg_color = 255U;
 
@@ -94,8 +106,7 @@ int main()
                     continue;
                 }
 
-                glm::vec2 gaussPoint = gauss.getPosPix();
-                glm::vec2 d = p - gaussPoint;
+                glm::vec2 d = p - gauss.getPosPix();
 
                 // d^T * Sigma^-1 * d
                 float q = glm::dot(d, gauss.getInvCovPix() * d);
@@ -125,16 +136,29 @@ int main()
 
             glm::vec3 background(0.0f);
             c = glm::clamp(c + T * background, 0.0f, 1.0f);
-            pix = {
+            // pix = {
+            //     static_cast<uint8_t>(c.r * 255.0f),
+            //     static_cast<uint8_t>(c.g * 255.0f),
+            //     static_cast<uint8_t>(c.b * 255.0f)
+            // };
+            image[idx] = pixel{
                 static_cast<uint8_t>(c.r * 255.0f),
                 static_cast<uint8_t>(c.g * 255.0f),
                 static_cast<uint8_t>(c.b * 255.0f)
             };
-            file.write(
-                reinterpret_cast<const char*>(&pix),
-                sizeof(pixel)
-            );
+            // file.write(
+            //     reinterpret_cast<const char*>(&pix),
+            //     sizeof(pixel)
+            // );
         }
     }
+    file.write(
+        reinterpret_cast<const char*>(image.data()),
+        image.size() * sizeof(pixel)
+    );
+    end = std::chrono::high_resolution_clock::now();
+    elapsed = end - start;
+
+    std::cout << "Generating whole PPM time: " << elapsed.count() << std::endl;
     return 0;
 }
