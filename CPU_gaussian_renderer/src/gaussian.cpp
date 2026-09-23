@@ -55,6 +55,43 @@ namespace GS
 
     }
 
+    BoundingBox Gaussian::getBoundingBox(float dist) const
+    {
+        glm::mat2 cov_m = glm::inverse(this->inv_cov_pix);
+        float a = cov_m[0][0];
+        float b = cov_m[0][1];
+        float c = cov_m[1][0];
+        float d = cov_m[1][1];
+
+        float l = (a + d) / 2;
+        float r = std::sqrt(std::pow((a - d)/2, 2) + b * b);
+        float lambda1_sqrt = dist * std::sqrt(l + r);
+        float lambda2_sqrt = dist * std::sqrt(l - r);
+
+        float theta{};
+        if((b < 1e-4) && (a >= d)) // ~0
+        {
+            theta = 0;
+        }
+        else if((b < 1e-4) && (a < d))
+        {
+            theta = std::numbers::pi / 2;
+        }
+        else
+        {
+            theta = std::atan2((lambda1_sqrt - a), b);
+        }
+
+        glm::mat2 rot_m(
+          std::cos(theta), std::sin(theta), // first column
+          -std::sin(theta), std::cos(theta) // second column
+        );
+
+        return BoundingBox{
+            // .minX = this->pos_pix.x + rot_m * glm::vec2(lambda1_sqrt, lambda2_sqrt),
+        };
+    }
+
     void Gaussian::computeCovariance()
     {
         this->cov = rotation_m * scale_m * glm::transpose(scale_m) * glm::transpose(rotation_m);

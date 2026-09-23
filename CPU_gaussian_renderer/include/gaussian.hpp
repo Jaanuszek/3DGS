@@ -30,7 +30,11 @@ namespace GS
 
             void applyRotation(float angle, const glm::vec3& axis);
 
-            BoundingBox getBoundingBox(int width, int height) const;
+            /*
+             * @param
+             *      dist - the bigger dist value the bigger OBB is (larger disntace from gaussian center)
+             */
+            BoundingBox getBoundingBox(float dist) const;
 
             const glm::mat2& getInvCovPix() const { return this->inv_cov_pix; }
             const glm::vec2& getPosPix() const { return this->pos_pix; }
