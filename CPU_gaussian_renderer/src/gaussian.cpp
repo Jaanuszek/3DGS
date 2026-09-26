@@ -96,7 +96,7 @@ namespace GS
     {
         glm::mat2 cov_m = glm::inverse(this->inv_cov_pix);
         float a = cov_m[0][0]; // Variation of X
-        float d = cov_m[1][1]; // Variaton of Y
+        float d = cov_m[1][1]; // Variation of Y
 
         // sqrt of variation is standard deviation
         float rx = dist * std::sqrt(a);
