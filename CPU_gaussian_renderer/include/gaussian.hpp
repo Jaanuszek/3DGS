@@ -33,6 +33,9 @@ namespace GS
             /*
              * @param
              *      dist - the bigger dist value the bigger OBB is (larger disntace from gaussian center)
+             *
+             * This function creates simple AABB without taking rotation into account
+             * (since it's not an OBB)
              */
             BoundingBox getBoundingBox(float dist) const;
 
