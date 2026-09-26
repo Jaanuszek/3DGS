@@ -6,18 +6,19 @@
 #include <memory>
 #include <random>
 #include <chrono>
+#include <fstream>
 #include "world.hpp"
-
 
 int main()
 {
-    constexpr int WIDHT = 800;
+    constexpr int WIDTH = 800;
     constexpr int HEIGHT = 600;
     constexpr float FOV = 90.0f;
-    constexpr uint32_t GAUSSIANS_COUNT = 100;
+    constexpr uint32_t GAUSSIANS_COUNT = 200;
+    constexpr float AABB_DIST = 3;
 
     std::shared_ptr<GS::Camera> camera = std::make_shared<GS::Camera>(
-        WIDHT, HEIGHT, FOV
+        WIDTH, HEIGHT, FOV
     );
 
     glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 2.0f);
@@ -76,36 +77,44 @@ int main()
     world.sortGaussians();
 
     std::vector<pixel> image;
-    image.resize(WIDHT * HEIGHT);
+    image.resize(WIDTH * HEIGHT);
+
+    std::vector<glm::vec3> colorBuffer(WIDTH * HEIGHT, glm::vec3(0.0f));
+    std::vector<float> transmittanceBuffer(WIDTH * HEIGHT, 1.0f);
 
     std::ofstream file("image.ppm", std::ios::binary);
 
     file << "P6\n";
-    file << WIDHT << " " << HEIGHT << '\n';
+    file << WIDTH << " " << HEIGHT << '\n';
     file << "255\n";
 
     start = std::chrono::high_resolution_clock::now();
-    for(int h = 0; h < HEIGHT; h++)
+    for(const auto& gauss : world.getGaussians())
     {
-        for(int w = 0; w < WIDHT; w++)
+        GS::BoundingBox bb = gauss.getBoundingBox(AABB_DIST);
+        const int minX = std::max(0, bb.minX);
+        const int maxX = std::min(WIDTH - 1, bb.maxX);
+        const int minY = std::max(0, bb.minY);
+        const int maxY = std::min(HEIGHT - 1, bb.maxY);
+
+        for(int h = minY; h <= maxY; h++)
         {
-            std::size_t idx = h * WIDHT + w;
-            // pixel pix;
-
-            std::uint8_t bg_color = 255U;
-
-            glm::vec2 p(w + 0.5f, h + 0.5f);
-
-            glm::vec3 c(0.0f);
-            float T = 1.0f;
-            for(const auto& gauss : world.getGaussians())
+            for(int w = minX; w <= maxX; w++)
             {
-                // If gaussian mean point is not in clip space, then ommit it
+                // if bb has negative pixel values then continue
                 if(!gauss.getIsRenderable())
                 {
                     continue;
                 }
 
+                std::size_t idx = h * WIDTH + w;
+                std::uint8_t bg_color = 255U;
+
+                glm::vec2 p(w + 0.5f, h + 0.5f);
+
+                glm::vec3 temp_c(0.0f);
+                glm::vec3 &c_ref = colorBuffer[idx];
+                float &T_ref = transmittanceBuffer[idx];
                 glm::vec2 d = p - gauss.getPosPix();
 
                 // d^T * Sigma^-1 * d
@@ -121,7 +130,7 @@ int main()
                     continue;
 
                 // Test variable to check if Transmittance is on sufficient level
-                float test_T = T * (1.0f - alpha);
+                float test_T = T_ref * (1.0f - alpha);
 
                 if(test_T < 0.0001f)
                     break;
@@ -130,28 +139,77 @@ int main()
                 // So firstly we calculate color, then update T
                 // T -> T_(i)
                 // test_T -> T_(i+1)
-                c += gauss.getColor() * alpha * T;
-                T = test_T;
-            }
+                temp_c += gauss.getColor() * alpha * T_ref;
+                T_ref = test_T;
 
-            glm::vec3 background(0.0f);
-            c = glm::clamp(c + T * background, 0.0f, 1.0f);
-            // pix = {
-            //     static_cast<uint8_t>(c.r * 255.0f),
-            //     static_cast<uint8_t>(c.g * 255.0f),
-            //     static_cast<uint8_t>(c.b * 255.0f)
-            // };
-            image[idx] = pixel{
-                static_cast<uint8_t>(c.r * 255.0f),
-                static_cast<uint8_t>(c.g * 255.0f),
-                static_cast<uint8_t>(c.b * 255.0f)
-            };
-            // file.write(
-            //     reinterpret_cast<const char*>(&pix),
-            //     sizeof(pixel)
-            // );
+                glm::vec3 background(0.0f);
+                c_ref = glm::clamp(temp_c + T_ref * background, 0.0f, 1.0f);
+                image[idx] += pixel{
+                    static_cast<uint8_t>(c_ref.r * 255.0f),
+                    static_cast<uint8_t>(c_ref.g * 255.0f),
+                    static_cast<uint8_t>(c_ref.b * 255.0f)
+                };
+            }
         }
     }
+//     for(int h = 0; h < HEIGHT; h++)
+//     {
+//         for(int w = 0; w < WIDTH; w++)
+//         {
+//             std::size_t idx = h * WIDTH + w;
+//             // pixel pix;
+//
+//             std::uint8_t bg_color = 255U;
+//
+//             glm::vec2 p(w + 0.5f, h + 0.5f);
+//
+//             glm::vec3 c(0.0f);
+//             float T = 1.0f;
+//             for(const auto& gauss : world.getGaussians())
+//             {
+//                 // If gaussian mean point is not in clip space, then ommit it
+//                 if(!gauss.getIsRenderable())
+//                 {
+//                     continue;
+//                 }
+//
+//                 glm::vec2 d = p - gauss.getPosPix();
+//
+//                 // d^T * Sigma^-1 * d
+//                 float q = glm::dot(d, gauss.getInvCovPix() * d);
+//
+//                 float density = std::exp(-0.5f * q);
+//
+//                 // From paper ai is given by evaluating a 2D Gaussian (`density`)
+//                 // multiplied with learned per-pont opacity => density * opacity
+//                 float alpha = std::min(0.99f, density * gauss.getOpacity());
+//
+//                 if(alpha < 1.0f / 255.0f)
+//                     continue;
+//
+//                 // Test variable to check if Transmittance is on sufficient level
+//                 float test_T = T * (1.0f - alpha);
+//
+//                 if(test_T < 0.0001f)
+//                     break;
+//
+//                 // Right now test_T is T_i+1, while T is T_i
+//                 // So firstly we calculate color, then update T
+//                 // T -> T_(i)
+//                 // test_T -> T_(i+1)
+//                 c += gauss.getColor() * alpha * T;
+//                 T = test_T;
+//             }
+//
+//             glm::vec3 background(0.0f);
+//             c = glm::clamp(c + T * background, 0.0f, 1.0f);
+//             image[idx] = pixel{
+//                 static_cast<uint8_t>(c.r * 255.0f),
+//                 static_cast<uint8_t>(c.g * 255.0f),
+//                 static_cast<uint8_t>(c.b * 255.0f)
+//             };
+//         }
+//     }
     file.write(
         reinterpret_cast<const char*>(image.data()),
         image.size() * sizeof(pixel)

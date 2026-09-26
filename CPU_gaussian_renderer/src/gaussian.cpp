@@ -55,40 +55,58 @@ namespace GS
 
     }
 
+//     BoundingBox Gaussian::getBoundingBox(float dist) const
+//     {
+//         glm::mat2 cov_m = glm::inverse(this->inv_cov_pix);
+//         float a = cov_m[0][0];
+//         float b = cov_m[0][1];
+//         float c = cov_m[1][0];
+//         float d = cov_m[1][1];
+//
+//         float l = (a + d) / 2;
+//         float r = std::sqrt(std::pow((a - d)/2, 2) + b * b);
+//         float lambda1_sqrt = dist * std::sqrt(l + r);
+//         float lambda2_sqrt = dist * std::sqrt(l - r);
+//
+//         float theta{};
+//         if((std::abs(b) < 1e-4) && (a >= d)) // ~0
+//         {
+//             theta = 0;
+//         }
+//         else if((std::abs(b) < 1e-4) && (a < d))
+//         {
+//             theta = std::numbers::pi / 2;
+//         }
+//         else
+//         {
+//             theta = std::atan2((lambda1_sqrt - a), b);
+//         }
+//
+//         glm::mat2 rot_m(
+//           std::cos(theta), std::sin(theta), // first column
+//           -std::sin(theta), std::cos(theta) // second column
+//         );
+//
+//         return BoundingBox{
+//             // .minX = this->pos_pix.x + rot_m * glm::vec2(lambda1_sqrt, lambda2_sqrt),
+//         };
+//     }
+
     BoundingBox Gaussian::getBoundingBox(float dist) const
     {
         glm::mat2 cov_m = glm::inverse(this->inv_cov_pix);
-        float a = cov_m[0][0];
-        float b = cov_m[0][1];
-        float c = cov_m[1][0];
-        float d = cov_m[1][1];
+        float a = cov_m[0][0]; // Variation of X
+        float d = cov_m[1][1]; // Variaton of Y
 
-        float l = (a + d) / 2;
-        float r = std::sqrt(std::pow((a - d)/2, 2) + b * b);
-        float lambda1_sqrt = dist * std::sqrt(l + r);
-        float lambda2_sqrt = dist * std::sqrt(l - r);
-
-        float theta{};
-        if((b < 1e-4) && (a >= d)) // ~0
-        {
-            theta = 0;
-        }
-        else if((b < 1e-4) && (a < d))
-        {
-            theta = std::numbers::pi / 2;
-        }
-        else
-        {
-            theta = std::atan2((lambda1_sqrt - a), b);
-        }
-
-        glm::mat2 rot_m(
-          std::cos(theta), std::sin(theta), // first column
-          -std::sin(theta), std::cos(theta) // second column
-        );
+        // sqrt of variation is standard deviation
+        float rx = dist * std::sqrt(a);
+        float ry = dist * std::sqrt(d);
 
         return BoundingBox{
-            // .minX = this->pos_pix.x + rot_m * glm::vec2(lambda1_sqrt, lambda2_sqrt),
+            .minX = static_cast<int>(std::floor(this->pos_pix.x - rx)),
+            .maxX = static_cast<int>(std::ceil(this->pos_pix.x + rx)),
+            .minY = static_cast<int>(std::floor(this->pos_pix.y - ry)),
+            .maxY = static_cast<int>(std::ceil(this->pos_pix.y + ry))
         };
     }
 
