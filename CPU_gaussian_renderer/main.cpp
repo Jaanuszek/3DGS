@@ -133,7 +133,7 @@ int main()
                 float test_T = T_ref * (1.0f - alpha);
 
                 if(test_T < 0.0001f)
-                    break;
+continue;
 
                 // Right now test_T is T_i+1, while T is T_i
                 // So firstly we calculate color, then update T
