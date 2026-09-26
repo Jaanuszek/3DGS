@@ -152,64 +152,7 @@ int main()
             }
         }
     }
-//     for(int h = 0; h < HEIGHT; h++)
-//     {
-//         for(int w = 0; w < WIDTH; w++)
-//         {
-//             std::size_t idx = h * WIDTH + w;
-//             // pixel pix;
-//
-//             std::uint8_t bg_color = 255U;
-//
-//             glm::vec2 p(w + 0.5f, h + 0.5f);
-//
-//             glm::vec3 c(0.0f);
-//             float T = 1.0f;
-//             for(const auto& gauss : world.getGaussians())
-//             {
-//                 // If gaussian mean point is not in clip space, then ommit it
-//                 if(!gauss.getIsRenderable())
-//                 {
-//                     continue;
-//                 }
-//
-//                 glm::vec2 d = p - gauss.getPosPix();
-//
-//                 // d^T * Sigma^-1 * d
-//                 float q = glm::dot(d, gauss.getInvCovPix() * d);
-//
-//                 float density = std::exp(-0.5f * q);
-//
-//                 // From paper ai is given by evaluating a 2D Gaussian (`density`)
-//                 // multiplied with learned per-pont opacity => density * opacity
-//                 float alpha = std::min(0.99f, density * gauss.getOpacity());
-//
-//                 if(alpha < 1.0f / 255.0f)
-//                     continue;
-//
-//                 // Test variable to check if Transmittance is on sufficient level
-//                 float test_T = T * (1.0f - alpha);
-//
-//                 if(test_T < 0.0001f)
-//                     break;
-//
-//                 // Right now test_T is T_i+1, while T is T_i
-//                 // So firstly we calculate color, then update T
-//                 // T -> T_(i)
-//                 // test_T -> T_(i+1)
-//                 c += gauss.getColor() * alpha * T;
-//                 T = test_T;
-//             }
-//
-//             glm::vec3 background(0.0f);
-//             c = glm::clamp(c + T * background, 0.0f, 1.0f);
-//             image[idx] = pixel{
-//                 static_cast<uint8_t>(c.r * 255.0f),
-//                 static_cast<uint8_t>(c.g * 255.0f),
-//                 static_cast<uint8_t>(c.b * 255.0f)
-//             };
-//         }
-//     }
+
     file.write(
         reinterpret_cast<const char*>(image.data()),
         image.size() * sizeof(pixel)
