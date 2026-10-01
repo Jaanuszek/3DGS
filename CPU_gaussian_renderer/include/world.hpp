@@ -3,6 +3,7 @@
 #include "camera.hpp"
 #include "gaussian.hpp"
 
+#include <limits>
 #include <memory>
 #include <vector>
 #include <unordered_map>
@@ -28,8 +29,8 @@ namespace GS{
     {
       public:
           World(std::shared_ptr<Camera> cam);
-          World(std::shared_ptr<Camera> cam,
-                const std::vector<Gaussian>& g_arr);
+          // World(std::shared_ptr<Camera> cam,
+          //       const std::vector<Gaussian>& g_arr);
 
           // template<std::ranges::input_range R>
           // World(const std::shared_ptr<Camera> cam, R&& g_arr)
@@ -60,6 +61,19 @@ namespace GS{
           const std::vector<Gaussian>& getGaussians() const
           {
               return gaussians;
+          }
+
+          const Gaussian& getGaussian(uint32_t g_id) const
+          {
+              return gaussians.at(g_id);
+          }
+
+          const float getGaussianDepth(uint32_t g_id) const
+          {
+              if(g_id > gaussians.size())
+                  return std::numeric_limits<float>::max();
+
+              return gaussians[g_id].getDepth();
           }
 
           size_t getGaussiansCount()

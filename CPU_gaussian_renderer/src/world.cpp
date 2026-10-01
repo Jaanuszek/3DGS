@@ -10,12 +10,12 @@ namespace GS
     {
     }
 
-    World::World(std::shared_ptr<Camera> cam,
-          const std::vector<Gaussian>& g_arr)
-        : camera(std::move(cam)), gaussians(g_arr)
-    {
-        sortGaussians();
-    }
+    // World::World(std::shared_ptr<Camera> cam,
+    //       const std::vector<Gaussian>& g_arr)
+    //     : camera(std::move(cam)), gaussians(g_arr)
+    // {
+    //     sortGaussians();
+    // }
 
     void World::addGaussian(const Gaussian& g)
     {
@@ -27,6 +27,8 @@ namespace GS
     {
         for(auto& g : g_arr)
         {
+            uint32_t g_id = static_cast<uint32_t>(gaussians.size());
+            g.setID(g_id);
             gaussians.push_back(std::move(g));
         }
         sortGaussians();
@@ -34,6 +36,9 @@ namespace GS
 
     void World::addGaussian_wo_sorting(Gaussian g)
     {
+        uint32_t g_id = static_cast<uint32_t>(gaussians.size());
+        g.setID(g_id);
+
         gaussians.push_back(std::move(g));
     }
 
