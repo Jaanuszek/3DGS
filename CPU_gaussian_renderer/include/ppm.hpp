@@ -22,4 +22,6 @@ struct pixel{
         this->b += rhs.b;
         return *this;
     }
+
+
 };

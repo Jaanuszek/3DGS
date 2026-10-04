@@ -29,6 +29,7 @@ target_sources(core_lib
     src/projection.cpp
     src/camera.cpp
     src/world.cpp
+    src/renderer.cpp
   PUBLIC
     FILE_SET HEADERS
     BASE_DIRS
@@ -40,6 +41,8 @@ target_sources(core_lib
 )
 
 add_executable(${PROJECT_NAME})
+
+target_compile_options(${PROJECT_NAME} PRIVATE -O0)
 
 target_sources(${PROJECT_NAME}
   PRIVATE

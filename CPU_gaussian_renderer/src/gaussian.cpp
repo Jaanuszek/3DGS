@@ -1,5 +1,6 @@
 #include "gaussian.hpp"
 #include "camera.hpp"
+#include "defines.hpp"
 #include <glm/ext/quaternion_common.hpp>
 
 #include <glm/gtc/quaternion.hpp>
@@ -107,6 +108,48 @@ namespace GS
             .maxX = static_cast<int>(std::ceil(this->pos_pix.x + rx)),
             .minY = static_cast<int>(std::floor(this->pos_pix.y - ry)),
             .maxY = static_cast<int>(std::ceil(this->pos_pix.y + ry))
+        };
+    }
+
+    TileRange Gaussian::getRect(float dist, uint32_t grid_max_x, uint32_t grid_max_y) const
+    {
+        glm::mat2 cov_m = glm::inverse(this->inv_cov_pix);
+        float a = cov_m[0][0]; // Variation of X
+        float d = cov_m[1][1]; // Variation of Y
+
+        // sqrt of variation is standard deviation
+        float rx = dist * std::sqrt(a);
+        float ry = dist * std::sqrt(d);
+
+        const int min_x = static_cast<int>(
+            std::floor((this->pos_pix.x - rx) / CONSTANT::TILE_X)
+        );
+
+        const int max_x = static_cast<int>(
+            std::ceil((this->pos_pix.x + rx) / CONSTANT::TILE_X)
+        );
+
+        const int min_y = static_cast<int>(
+            std::floor((this->pos_pix.y - ry) / CONSTANT::TILE_Y)
+        );
+
+        const int max_y = static_cast<int>(
+            std::ceil((this->pos_pix.y + ry) / CONSTANT::TILE_Y)
+        );
+
+        return TileRange{
+            .tile_x_min = static_cast<uint32_t>(
+                std::clamp(min_x, 0, static_cast<int>(grid_max_x))
+            ),
+            .tile_x_max = static_cast<uint32_t>(
+                std::clamp(max_x, 0, static_cast<int>(grid_max_x))
+            ),
+            .tile_y_min = static_cast<uint32_t>(
+                std::clamp(min_y, 0, static_cast<int>(grid_max_y))
+            ),
+            .tile_y_max = static_cast<uint32_t>(
+                std::clamp(max_y, 0, static_cast<int>(grid_max_y))
+            )
         };
     }
 
