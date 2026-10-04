@@ -6,15 +6,15 @@
 #include <memory>
 #include <random>
 #include <chrono>
-#include <atomic>
-#include <fstream>
 #include "world.hpp"
 #include "defines.hpp"
+#include "renderer.hpp"
 
 int main()
 {
-    const uint32_t GRID_X_MAX = (CONSTANT::WIDTH + CONSTANT::TILE_X - 1) / CONSTANT::TILE_X;
-    const uint32_t GRID_Y_MAX = (CONSTANT::HEIGHT + CONSTANT::TILE_Y - 1) / CONSTANT::TILE_Y;
+    constexpr uint32_t GRID_X_MAX = (CONSTANT::WIDTH + CONSTANT::TILE_X - 1) / CONSTANT::TILE_X;
+    constexpr uint32_t GRID_Y_MAX = (CONSTANT::HEIGHT + CONSTANT::TILE_Y - 1) / CONSTANT::TILE_Y;
+    constexpr uint32_t TILES_COUNT = GRID_X_MAX * GRID_Y_MAX;
 
     std::shared_ptr<GS::Camera> camera = std::make_shared<GS::Camera>(
         CONSTANT::WIDTH, CONSTANT::HEIGHT, CONSTANT::FOV
@@ -71,10 +71,9 @@ int main()
 
     std::chrono::duration<double, std::milli> elapsed = end - start;
 
-    std::cout << "Generating gaussians time: " << elapsed.count() << std::endl;
+    // GS::Renderer renderer(std::move(world));
 
-    // DO NOT SORT GAUSSIAN NOW!
-    // world.sortGaussians();
+    std::cout << "Generating gaussians time: " << elapsed.count() << std::endl;
 
     std::vector<pixel> image;
     image.resize(CONSTANT::WIDTH * CONSTANT::HEIGHT);
@@ -123,8 +122,12 @@ int main()
     file << CONSTANT::WIDTH << " " << CONSTANT::HEIGHT << '\n';
     file << "255\n";
 
-    // std::cout << GRID_X_MAX << std::endl;
+//     // std::cout << GRID_X_MAX << std::endl;
     start = std::chrono::high_resolution_clock::now();
+    // for(int i = 0 ; i < TILES_COUNT; i++)
+    // {
+    //     renderer.render_tile();
+    // }
     // Render
     std::atomic<uint32_t> tile_num = 0;
     for(const auto& tile : Tiles)
@@ -195,9 +198,11 @@ int main()
         reinterpret_cast<const char*>(image.data()),
         image.size() * sizeof(pixel)
     );
+
     end = std::chrono::high_resolution_clock::now();
     elapsed = end - start;
 
+    // renderer.saveToPPM("image.ppm");
     std::cout << "Generating whole PPM time: " << elapsed.count() << std::endl;
 
     return 0;

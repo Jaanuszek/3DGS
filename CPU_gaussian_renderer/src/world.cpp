@@ -10,6 +10,21 @@ namespace GS
     {
     }
 
+    World::World(World&& other) noexcept
+        : gaussians(std::move(other.gaussians)),
+        camera(std::move(other.camera))
+    {}
+
+    World& World::operator=(World&& other) noexcept
+    {
+        if(this != &other)
+        {
+            this->gaussians = std::move(other.gaussians);
+            this->camera = std::move(other.camera);
+        }
+        return *this;
+    }
+
     // World::World(std::shared_ptr<Camera> cam,
     //       const std::vector<Gaussian>& g_arr)
     //     : camera(std::move(cam)), gaussians(g_arr)

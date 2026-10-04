@@ -43,10 +43,10 @@ namespace GS{
           ~World() = default;
 
           World(const World&) = delete;
-          World(World&&) = delete;
+          World(World&& other) noexcept;
 
           World& operator=(const World&) = delete;
-          World& operator=(World&&) = delete;
+          World& operator=(World&& other) noexcept;
 
           void reserveGaussians(std::size_t count){ gaussians.reserve(count); }
 

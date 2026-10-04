@@ -5,25 +5,31 @@
 
 namespace GS
 {
-    Renderer::Renderer(uint32_t grid_max_x, uint32_t grid_max_y)
+    Renderer::Renderer(World&& world) : world(std::move(world))
     {
         constexpr uint32_t PIXEL_COUNT = CONSTANT::WIDTH * CONSTANT::HEIGHT;
+
+        this->GRID_X_MAX = (CONSTANT::WIDTH + CONSTANT::TILE_X - 1) / CONSTANT::TILE_X;
+        this->GRID_Y_MAX = (CONSTANT::HEIGHT + CONSTANT::TILE_Y - 1) / CONSTANT::TILE_Y;
+
         image.resize(PIXEL_COUNT);
 
         colorBuffer = std::vector<glm::vec3>(PIXEL_COUNT, glm::vec3(0.0f));
         transmittanceBuffer = std::vector<float>(PIXEL_COUNT, 1.0f);
-        Tiles = std::vector<std::vector<uint32_t>>(grid_max_x * grid_max_y);
+        Tiles = std::vector<std::vector<uint32_t>>(this->GRID_X_MAX * this->GRID_Y_MAX);
 
+        this->gaussToTile();
+        this->sortTiles();
     }
 
-    void Renderer::render_tile(std::atomic<uint32_t> tile_id, const World& world)
+    void Renderer::render_tile()
     {
-        uint32_t col = std::floor(tile_id / GRID_X_MAX);
+        uint32_t col = std::floor(tile_id / this->GRID_X_MAX);
         uint32_t minX = tile_id * CONSTANT::TILE_X % (CONSTANT::WIDTH);
         uint32_t maxX = (tile_id * CONSTANT::TILE_X + CONSTANT::TILE_X) % (CONSTANT::WIDTH);
         uint32_t minY = col * CONSTANT::TILE_Y;
         uint32_t maxY = (minY + CONSTANT::TILE_Y) < CONSTANT::HEIGHT ? minY + CONSTANT::TILE_Y : CONSTANT::HEIGHT - 1;
-        tile_id.fetch_add(1, std::memory_order_relaxed);
+        this->tile_id.fetch_add(1, std::memory_order_relaxed);
         // std::cout << "minx: " << minX << " maxX: " << maxX << std::endl;
         // std::cout << "miny: " << minY << " maxY: " << maxY << std::endl;
         for(int h = minY; h < maxY; h++)
@@ -32,7 +38,7 @@ namespace GS
             {
                 for(const auto& g_id : Tiles[tile_id])
                 {
-                    GS::Gaussian gauss = world.getGaussian(g_id);
+                    GS::Gaussian gauss = this->world.getGaussian(g_id);
                     std::size_t idx = h * CONSTANT::WIDTH + w;
                     std::uint8_t bg_color = 255U;
 
@@ -77,7 +83,7 @@ namespace GS
                     };
                 }
             }
-            }
+        }
     }
 
     void Renderer::saveToPPM(const std::string& out_path)
@@ -94,5 +100,41 @@ namespace GS
             reinterpret_cast<const char*>(image.data()),
             image.size() * sizeof(pixel)
         );
+    }
+
+    void Renderer::gaussToTile()
+    {
+        for(const auto& gauss : this->world.getGaussians())
+        {
+            GS::TileRange tile_range = gauss.getRect(CONSTANT::AABB_DIST, GRID_X_MAX, GRID_Y_MAX);
+
+            const uint32_t minX = std::max((uint32_t)0, tile_range.tile_x_min);
+            const uint32_t maxX = std::min(GRID_X_MAX, tile_range.tile_x_max);
+            const uint32_t minY = std::max((uint32_t)0, tile_range.tile_y_min);
+            const uint32_t maxY = std::min(GRID_Y_MAX, tile_range.tile_y_max);
+
+            const uint32_t g_id = gauss.getID();
+            for(int y = minY; y < maxY; y++)
+            {
+                for(int x = minX; x < maxX; x++)
+                {
+                    const uint32_t tileID = y * GRID_X_MAX + x;
+                    Tiles[tileID].push_back(g_id);
+                }
+            }
+        }
+    }
+
+    void Renderer::sortTiles()
+    {
+        for(auto& tile : this->Tiles)
+        {
+            std::sort(tile.begin(), tile.end(),
+                [this](const uint32_t& g_id1, const uint32_t& g_id2)
+                {
+                    return world.getGaussianDepth(g_id1) < world.getGaussianDepth(g_id2);
+                }
+            );
+        }
     }
 }
