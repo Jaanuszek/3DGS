@@ -121,11 +121,35 @@ namespace GS
         float rx = dist * std::sqrt(a);
         float ry = dist * std::sqrt(d);
 
+        const int min_x = static_cast<int>(
+            std::floor((this->pos_pix.x - rx) / CONSTANT::TILE_X)
+        );
+
+        const int max_x = static_cast<int>(
+            std::ceil((this->pos_pix.x + rx) / CONSTANT::TILE_X)
+        );
+
+        const int min_y = static_cast<int>(
+            std::floor((this->pos_pix.y - ry) / CONSTANT::TILE_Y)
+        );
+
+        const int max_y = static_cast<int>(
+            std::ceil((this->pos_pix.y + ry) / CONSTANT::TILE_Y)
+        );
+
         return TileRange{
-            .tile_x_min = static_cast<uint32_t>(std::floor(this->pos_pix.x - rx) / CONSTANT::TILE_X),
-            .tile_x_max = static_cast<uint32_t>(std::ceil(this->pos_pix.x + rx) / CONSTANT::TILE_Y),
-            .tile_y_min = static_cast<uint32_t>(std::floor(this->pos_pix.y - ry) / CONSTANT::TILE_X),
-            .tile_y_max = static_cast<uint32_t>(std::ceil(this->pos_pix.y + ry) / CONSTANT::TILE_Y)
+            .tile_x_min = static_cast<uint32_t>(
+                std::clamp(min_x, 0, static_cast<int>(grid_max_x))
+            ),
+            .tile_x_max = static_cast<uint32_t>(
+                std::clamp(max_x, 0, static_cast<int>(grid_max_x))
+            ),
+            .tile_y_min = static_cast<uint32_t>(
+                std::clamp(min_y, 0, static_cast<int>(grid_max_y))
+            ),
+            .tile_y_max = static_cast<uint32_t>(
+                std::clamp(max_y, 0, static_cast<int>(grid_max_y))
+            )
         };
     }
 

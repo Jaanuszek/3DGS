@@ -42,7 +42,7 @@ target_sources(core_lib
 
 add_executable(${PROJECT_NAME})
 
-target_compile_options(${PROJECT_NAME} PRIVATE -g -O3)
+target_compile_options(${PROJECT_NAME} PRIVATE -O0)
 
 target_sources(${PROJECT_NAME}
   PRIVATE

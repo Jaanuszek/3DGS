@@ -58,21 +58,18 @@ namespace GS{
 
           void sortGaussians();
 
-          const std::vector<Gaussian>& getGaussians() const
+          const std::vector<Gaussian>& getGaussians() const noexcept
           {
               return gaussians;
           }
 
-          const Gaussian& getGaussian(uint32_t g_id) const
+          const Gaussian& getGaussian(uint32_t g_id) const noexcept
           {
-              return gaussians.at(g_id);
+              return gaussians[g_id];
           }
 
-          const float getGaussianDepth(uint32_t g_id) const
+          float getGaussianDepth(uint32_t g_id) const noexcept
           {
-              if(g_id > gaussians.size())
-                  return std::numeric_limits<float>::max();
-
               return gaussians[g_id].getDepth();
           }
 

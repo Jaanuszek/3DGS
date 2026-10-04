@@ -11,6 +11,9 @@
 
 #include "world.hpp"
 
+
+#include <iostream>
+
 namespace GS
 {
     class Renderer
@@ -18,7 +21,7 @@ namespace GS
         public:
             Renderer(World&& world);
 
-            void render_tile();
+            void render_tile(uint32_t tile_id);
 
             void saveToPPM(const std::string& out_path);
         private:
@@ -29,13 +32,11 @@ namespace GS
 
         private:
             std::vector<pixel> image;
-            std::vector<glm::vec3> colorBuffer;
-            std::vector<float> transmittanceBuffer;
             std::vector<std::vector<uint32_t>> Tiles;
 
             World world;
 
-            std::atomic<uint32_t> tile_id{};
+            // uint32_t tile_id{0};
 
             uint32_t GRID_X_MAX;
             uint32_t GRID_Y_MAX;

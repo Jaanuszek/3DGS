@@ -14,40 +14,40 @@ namespace GS
 
         image.resize(PIXEL_COUNT);
 
-        colorBuffer = std::vector<glm::vec3>(PIXEL_COUNT, glm::vec3(0.0f));
-        transmittanceBuffer = std::vector<float>(PIXEL_COUNT, 1.0f);
         Tiles = std::vector<std::vector<uint32_t>>(this->GRID_X_MAX * this->GRID_Y_MAX);
 
         this->gaussToTile();
         this->sortTiles();
     }
 
-    void Renderer::render_tile()
+    void Renderer::render_tile(uint32_t tile_id)
     {
-        uint32_t col = std::floor(tile_id / this->GRID_X_MAX);
-        uint32_t minX = tile_id * CONSTANT::TILE_X % (CONSTANT::WIDTH);
-        uint32_t maxX = (tile_id * CONSTANT::TILE_X + CONSTANT::TILE_X) % (CONSTANT::WIDTH);
-        uint32_t minY = col * CONSTANT::TILE_Y;
-        uint32_t maxY = (minY + CONSTANT::TILE_Y) < CONSTANT::HEIGHT ? minY + CONSTANT::TILE_Y : CONSTANT::HEIGHT - 1;
-        this->tile_id.fetch_add(1, std::memory_order_relaxed);
+        const uint32_t tile_x = tile_id % GRID_X_MAX;
+        const uint32_t tile_y = tile_id / GRID_X_MAX;
+        const uint32_t minX = tile_x * CONSTANT::TILE_X;
+        const uint32_t maxX = std::min(minX + CONSTANT::TILE_X, CONSTANT::WIDTH);
+        const uint32_t minY = tile_y * CONSTANT::TILE_Y;
+        const uint32_t maxY = std::min(minY + CONSTANT::TILE_Y, CONSTANT::HEIGHT);
+
+        const std::vector<uint32_t>& tile = Tiles[tile_id];
+        const auto& gaussians = world.getGaussians();
+        // tile_id.fetch_add(1, std::memory_order_relaxed);
+        tile_id++;
         // std::cout << "minx: " << minX << " maxX: " << maxX << std::endl;
         // std::cout << "miny: " << minY << " maxY: " << maxY << std::endl;
         for(int h = minY; h < maxY; h++)
         {
             for(int w = minX; w < maxX; w++)
             {
-                for(const auto& g_id : Tiles[tile_id])
+                std::size_t idx = h * CONSTANT::WIDTH + w;
+                glm::vec2 p(w + 0.5f, h + 0.5f);
+                glm::vec3 C(0.0f);
+                float T = 1.0f;
+                for(const auto& g_id : tile)
                 {
-                    GS::Gaussian gauss = this->world.getGaussian(g_id);
-                    std::size_t idx = h * CONSTANT::WIDTH + w;
-                    std::uint8_t bg_color = 255U;
+                    const Gaussian& gauss = gaussians[g_id];
 
-                    glm::vec2 p(w + 0.5f, h + 0.5f);
-
-                    glm::vec3 temp_c(0.0f);
-                    glm::vec3 &c_ref = colorBuffer[idx];
-                    float &T_ref = transmittanceBuffer[idx];
-                    glm::vec2 d = p - gauss.getPosPix();
+                    const glm::vec2 d = p - gauss.getPosPix();
 
                     // d^T * Sigma^-1 * d
                     float q = glm::dot(d, gauss.getInvCovPix() * d);
@@ -62,26 +62,19 @@ namespace GS
                         continue;
 
                     // Test variable to check if Transmittance is on sufficient level
-                    float test_T = T_ref * (1.0f - alpha);
-
-                    if(test_T < 0.0001f)
-                        continue;
-
-                    // Right now test_T is T_i+1, while T is T_i
-                    // So firstly we calculate color, then update T
-                    // T -> T_(i)
-                    // test_T -> T_(i+1)
-                    temp_c += gauss.getColor() * alpha * T_ref;
-                    T_ref = test_T;
-
-                    glm::vec3 background(0.0f);
-                    c_ref = glm::clamp(temp_c + T_ref * background, 0.0f, 1.0f);
-                    image[idx] += pixel{
-                        static_cast<uint8_t>(c_ref.r * 255.0f),
-                        static_cast<uint8_t>(c_ref.g * 255.0f),
-                        static_cast<uint8_t>(c_ref.b * 255.0f)
-                    };
+                    // float test_T = T_ref * (1.0f - alpha);
+                    C += gauss.getColor() * (T * alpha);
+                    T *= (1.0f - alpha);
+                    if(T < 0.0001f)
+                        break;
                 }
+                glm::vec3 background(0.0f);
+                C = glm::clamp(C, 0.0f, 1.0f);
+                image[idx] += pixel{
+                    static_cast<uint8_t>(C.r * 255.0f),
+                    static_cast<uint8_t>(C.g * 255.0f),
+                    static_cast<uint8_t>(C.b * 255.0f)
+                };
             }
         }
     }
