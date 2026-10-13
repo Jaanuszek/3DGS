@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.28)
 
 project(Gaussian_renderer C CXX CUDA)
 
+include(FetchContent)
+
 # find_package(CUDAToolkit REQUIRED)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -13,6 +15,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 SET(HOST_LIB host_lib)
 SET(DEVICE_LIB device_lib)
+
+# GLM
+FetchContent_Declare(
+	glm
+	GIT_REPOSITORY	https://github.com/g-truc/glm.git
+	GIT_TAG 8d1fd52e5ab5590e2c81768ace50c72bae28f2ed #refs/tags/1.0.3
+)
+
+FetchContent_MakeAvailable(glm)
 
 add_library(${HOST_LIB})
 
@@ -55,4 +66,5 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE
     ${HOST_LIB}
     ${DEVICE_LIB}
+    glm::glm
 )
