@@ -1,5 +1,7 @@
 #pragma once
 
+#include "glm/glm.hpp""
+
 namespace D_GS
 {
     // for now let's keep it as Array of structures
@@ -12,7 +14,8 @@ namespace D_GS
         float opacity;
     };
 
-    __global__ void preprocess();
+    // gc - gaussian count
+    __global__ void preprocess(Gaussian* gaussians, const int gc);
 
     // Check if gaussian is visible by camera
     __device__ bool in_frustum(

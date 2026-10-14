@@ -46,6 +46,8 @@ target_sources(${DEVICE_LIB}
   PRIVATE
     cuda/ppm_cuda.cu
     cuda/renderer_cuda.cu
+    cuda/gaussian.cu
+    cuda/helpers.cu
   PUBLIC
     FILE_SET HEADERS
     BASE_DIRS
@@ -53,6 +55,8 @@ target_sources(${DEVICE_LIB}
     FILES
       cuda/ppm_cuda.cuh
       cuda/renderer_cuda.cuh
+      cuda/helpers.cuh
+      cuda/gaussian.cuh
 )
 
 add_executable(${PROJECT_NAME})
