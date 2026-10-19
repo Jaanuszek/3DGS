@@ -1,11 +1,14 @@
 #include "gaussian.cuh"
+#include <glm/matrix.hpp>
 // #include <__clang_cuda_builtin_vars.h>
 
 namespace D_GS
 {
     __global__ void preprocess(
+        float f_x, float f_y,
         Gaussian* gaussians,
         float* cov3Ds,
+        float3* inv_sigma,
         const glm::mat4 *viewMat,
         const glm::mat4 *projMat,
         const int gc)
@@ -22,6 +25,8 @@ namespace D_GS
         // 2. compute 3D covariance
         // 3. Compute Jacobian
         // 4. Compute 2D covariance (in view space)
+        // 5. Compute inverse sigma (to be able to compute final gaussian density)
+        // 6. Store necessary data in global memory
 
         // 0.
         glm::vec4 pointCam = *viewMat * glm::vec4(gs.mean3d, 1.0f);
@@ -31,9 +36,20 @@ namespace D_GS
         if(!in_frustum(gs.mean3d, *viewMat, *projMat))
             return;
 
-        //2.
+        // 2.
         float* cov3D = cov3Ds + idx * 6;
-        computeCov3D(gs.scale, gs.rotation, float *cov3D)
+        computeCov3D(gs.scale, gs.rotation, cov3D);
+
+        // 3, 4.
+        float3 cov2D = computeCov2D(
+            gs.mean3d, cov3D,
+            *viewMat, f_x, f_y
+        );
+
+        // 5.
+        computeInvSigma(cov2D, *inv_sigma);
+
+        // 6.
     }
 
     __device__ bool in_frustum(
@@ -87,8 +103,48 @@ namespace D_GS
         cov3D[5] = Sigma[2][2];
     }
 
-    __device__ void computeCov2D(const float3& mean)
+    __device__ float3 computeCov2D(const glm::vec3& mean, const float* cov3D, const glm::mat4& view_m, float f_x, float f_y)
     {
+        // I might add here bigger fov, so gaussian tat has center near camera
+        // frustum can be rendered. See computeCov2D here https://github.com/graphdeco-inria/diff-gaussian-rasterization/blob/59f5f77e3ddbac3ed9db93ec2cfe99ed6c5d121d/cuda_rasterizer/forward.cu#L74
+        glm::vec4 pointCam = view_m * glm::vec4(mean, 1.0f);
 
+        float z_2 = pointCam.z * pointCam.z;
+        glm::mat3x2 J = glm::mat3x2(
+          f_x / pointCam.z, 0.0f,
+          0, f_x / pointCam.z,
+          (-f_x * pointCam.x) / (z_2), (-f_y * pointCam.y) / (z_2)
+        );
+
+        // rotation part of view matrix
+        glm::mat3 W = glm::mat3(view_m);
+
+        glm::mat3 cov3d_mat = glm::mat3(
+            cov3D[0], cov3D[1], cov3D[2],
+            cov3D[1], cov3D[3], cov3D[4],
+            cov3D[2], cov3D[4], cov3D[5]
+        );
+
+        glm::mat3 T = W * cov3d_mat * glm::transpose(W);
+        glm::mat2 cov2D = J * T * glm::transpose(J);
+
+        return { float(cov2D[0][0]), float(cov2D[0][1]), float(cov2D[1][1]) };
+    }
+
+    __device__ void computeInvSigma(float3 cov2D, float3& inv_sigma)
+    {
+        float a = cov2D.x; // [0][0]
+        float b = cov2D.y; // [0][1]
+        float c = cov2D.z; // [1][1]
+
+        float det = a * c - b * b;
+        if(det <= 1e-8f)
+            return;
+
+        float det_inv = 1 / det;
+
+       inv_sigma.x = det_inv * c;
+       inv_sigma.y = -det_inv * b;
+       inv_sigma.z = det_inv * a;
     }
 }
