@@ -19,14 +19,15 @@ namespace D_GS
 
     // gc - gaussian count
     __global__ void preprocess(
-        float f_x, float f_y,
+        const float f_x, const float f_y,
+        const uint32_t H, const uint32_t W,
         Gaussian* gaussians,
         float* cov3Ds,
         float3* inv_sigma,
+        glm::vec2* pix_mean,
         const glm::mat4 *viewMat,
         const glm::mat4 *projMat,
-        const int gc)
-    );
+        const int gc);
 
     // Check if gaussian is visible by camera
     __device__ bool in_frustum(
@@ -42,4 +43,10 @@ namespace D_GS
     __device__ float3 computeCov2D(const glm::vec3& mean, const float* cov3D, const glm::mat4& view_m, float f_x, float f_y);
 
     __device__ void computeInvSigma(const float3& cov2D, float3& inv_sigma);
+
+    __device__ glm::vec3 hom2Cart(const glm::vec4& p_hom);
+
+    __device__ float ndc2Pix(const float v, const float S);
+
+    __device__ float ndc2Pix_inv(const float v, const float S);
 }

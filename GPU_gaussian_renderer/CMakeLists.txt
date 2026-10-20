@@ -29,15 +29,19 @@ add_library(${HOST_LIB})
 
 target_sources(${HOST_LIB}
   PRIVATE
-    src/ppm.cpp
+    # src/ppm.cpp
     src/renderer.cpp
   PUBLIC
     FILE_SET HEADERS
     BASE_DIRS
       include
     FILES
-      include/ppm.hpp
+      # include/ppm.hpp
       include/renderer.hpp
+)
+
+target_compile_options(${HOST_LIB} PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:-g;-O0>
 )
 
 add_library(${DEVICE_LIB})
@@ -59,7 +63,21 @@ target_sources(${DEVICE_LIB}
       cuda/gaussian.cuh
 )
 
+target_compile_options(${DEVICE_LIB} PRIVATE
+    $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo;-G>
+    # $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>
+    $<$<COMPILE_LANGUAGE:CXX>:-g;-O0>
+)
+
 add_executable(${PROJECT_NAME})
+
+# target_compile_options(${PROJECT_NAME} PRIVATE -G -g -O0)
+
+target_compile_options(${PROJECT_NAME} PRIVATE
+    $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo;-G>
+    # $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>
+    $<$<COMPILE_LANGUAGE:CXX>:-g;-O0>
+)
 
 target_sources(${PROJECT_NAME}
   PRIVATE

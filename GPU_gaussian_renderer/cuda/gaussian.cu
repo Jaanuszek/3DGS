@@ -5,10 +5,12 @@
 namespace D_GS
 {
     __global__ void preprocess(
-        float f_x, float f_y,
+        const float f_x, const float f_y,
+        const uint32_t H, const uint32_t W,
         Gaussian* gaussians,
         float* cov3Ds,
         float3* inv_sigma,
+        glm::vec2* pix_mean,
         const glm::mat4 *viewMat,
         const glm::mat4 *projMat,
         const int gc)
@@ -26,7 +28,11 @@ namespace D_GS
         // 3. Compute Jacobian
         // 4. Compute 2D covariance (in view space)
         // 5. Compute inverse sigma (to be able to compute final gaussian density)
-        // 6. Store necessary data in global memory
+        // 6. compute projected mean to pixel
+        // 6.5 change projected point from homogenous to cartesian cords
+        // 7. Store necessary data in global memory
+        // 7.1 invSigma (inv 2D covariance mat)
+        // 7.2 mean_pixel (as float2 -> x,y)
 
         // 0.
         glm::vec4 pointCam = *viewMat * glm::vec4(gs.mean3d, 1.0f);
@@ -47,9 +53,22 @@ namespace D_GS
         );
 
         // 5.
-        computeInvSigma(cov2D, *inv_sigma);
+        // it actually stores result in global memory
+        float3* cov_inv = inv_sigma + idx;
+        computeInvSigma(cov2D, *cov_inv);
+
+        // 6.5
+        // p_proj is in cartesian cords (3D not 4D)
+        glm::vec3 p_proj = hom2Cart(pointProj);
 
         // 6.
+        glm::vec2 mean_pix = glm::vec2(
+          ndc2Pix(p_proj.x, W),
+          ndc2Pix_inv(p_proj.y, H)
+        );
+
+        //7.
+        pix_mean[idx] = mean_pix;
     }
 
     __device__ bool in_frustum(
@@ -112,7 +131,7 @@ namespace D_GS
         float z_2 = pointCam.z * pointCam.z;
         glm::mat3x2 J = glm::mat3x2(
           f_x / pointCam.z, 0.0f,
-          0, f_x / pointCam.z,
+          0, f_y / pointCam.z,
           (-f_x * pointCam.x) / (z_2), (-f_y * pointCam.y) / (z_2)
         );
 
@@ -131,7 +150,7 @@ namespace D_GS
         return { float(cov2D[0][0]), float(cov2D[0][1]), float(cov2D[1][1]) };
     }
 
-    __device__ void computeInvSigma(float3 cov2D, float3& inv_sigma)
+    __device__ void computeInvSigma(const float3& cov2D, float3& inv_sigma)
     {
         float a = cov2D.x; // [0][0]
         float b = cov2D.y; // [0][1]
@@ -139,12 +158,31 @@ namespace D_GS
 
         float det = a * c - b * b;
         if(det <= 1e-8f)
+        {
+            inv_sigma = make_float3(0.0f, 0.0f, 0.0f);
             return;
+        }
 
         float det_inv = 1 / det;
 
        inv_sigma.x = det_inv * c;
        inv_sigma.y = -det_inv * b;
        inv_sigma.z = det_inv * a;
+    }
+
+    __device__ glm::vec3 hom2Cart(const glm::vec4& p_hom)
+    {
+        float p_w = 1.0f / p_hom.w;
+        return glm::vec3(p_hom.x * p_w, p_hom.y * p_w, p_hom.z * p_w);
+    }
+
+    __device__ float ndc2Pix(const float v, const float S)
+    {
+        return ((v + 1.0f) * S - 1.0f) * 0.5f;
+    }
+
+    __device__ float ndc2Pix_inv(const float v, const float S)
+    {
+        return ((1.0f - v) * S - 1.0f) * 0.5f;
     }
 }
