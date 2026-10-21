@@ -8,6 +8,7 @@
 #include <limits>
 
 #include <curand_kernel.h>
+#include "cuda_check.cuh"
 
 #include "cuda/gaussian.cuh"
 #include "include/defines.hpp"
@@ -44,39 +45,8 @@ namespace
 using H_GS::pixel;
 using D_GS::Gaussian;
 
-__global__ void init_rand(curandState *state, unsigned long long seed)
-{
-    int id = threadIdx.x + blockDim.x * blockIdx.x;
-    curand_init(seed, id, 0, &state[id]);
-}
-
-// kernel which randomly takes pixel color and save it to the image
-__global__ void randomPixel(curandState *r_state, pixel* image, uint32_t image_size)
-{
-    int id = threadIdx.x + blockDim.x * blockIdx.x;
-
-    if(id >= image_size)
-        return;
-
-    // copy to not use global memory
-    curandState localState = r_state[id];
-
-    float rand_float_x = curand_uniform(&localState);
-    float rand_float_y = curand_uniform(&localState);
-    float rand_float_z = curand_uniform(&localState);
-
-    int range = MAX - MIN + 1;
-    int rand_int_x = MIN + (uint32_t)(rand_float_x * range);
-    int rand_int_y = MIN + (uint32_t)(rand_float_y * range);
-    int rand_int_z = MIN + (uint32_t)(rand_float_z * range);
-
-
-    image[id] = pixel{
-        (uint8_t)(rand_int_x), (uint8_t)(rand_int_y), (uint8_t)(rand_int_z)
-    };
-}
-
 __global__ void renderGaussians(
+    const D_GS::Gaussian* gaussians,
     const glm::vec2* pix_mean, const float3* inv_cov,
     pixel* image, uint32_t image_size, uint32_t gc)
 {
@@ -89,14 +59,15 @@ __global__ void renderGaussians(
     int pix_y = idx / WIDTH;
     glm::vec2 p(pix_x + 0.5f , pix_y + 0.5f);
 
-    float r = 255.0f;
-    float g = 255.0f;
-    float b = 255.0f;
+    glm::vec3 C(0.0f);
+    float T = 1.0f;
 
     for(int i = 0; i < gc; i++)
     {
         const glm::vec2 g_mean = pix_mean[i];
         const float3 g_inv_cov = inv_cov[i];
+        const Gaussian g = gaussians[i];
+
         glm::mat2 g_inv_cov_m = glm::mat2(
           g_inv_cov.x, g_inv_cov.y,
           g_inv_cov.y, g_inv_cov.z
@@ -107,36 +78,64 @@ __global__ void renderGaussians(
         float q = glm::dot(d, g_inv_cov_m * d);
 
         float density = expf(-0.5f * q);
-        r *= density;
-        g *= density;
-        b *= density;
-    }
 
-    image[idx] = pixel{
-        static_cast<uint8_t>(r),
-        static_cast<uint8_t>(g),
-        static_cast<uint8_t>(b)
-    };
+        float alpha = min(0.99f, density * g.opacity);
+
+        if(alpha < 1.0f / 255.0f)
+            continue;
+
+        // This does not work in kernel:
+        // C += g.color * (T * alpha);
+        const float cr = g.color.x;
+        const float cg = g.color.y;
+        const float cb = g.color.z;
+
+        const float weight = T * alpha;
+
+        C.x += cr * weight;
+        C.y += cg * weight;
+        C.z += cb * weight;
+        T *= (1.0f - alpha);
+        if(T < 0.0001f)
+            break;
+    }
+    C = glm::clamp(C,0.0f, 1.0f);
+
+    image[idx].r = static_cast<uint8_t>(C.r * 255.0f);
+    image[idx].g = static_cast<uint8_t>(C.g * 255.0f);
+    image[idx].b = static_cast<uint8_t>(C.b * 255.0f);
 }
 
 int main()
 {
     H_GS::Renderer renderer;
 
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    // std::uniform_int_distribution<unsigned long long> dist_ull(0, std::numeric_limits<unsigned long long>::max());
-
-    Gaussian g1{
+    D_GS::Gaussian g1{
         .mean3d = glm::vec3(0.0f, 0.0f, -10.0f),
         .scale = glm::vec3(1.0f, 2.0f, 1.0f),
-        .color = glm::vec3(1.0f, 1.0f, 1.0f),
+        .color = glm::vec3(0.3f, 1.0f, 0.08),
+        .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
+        .opacity = 0.5f
+    };
+
+    D_GS::Gaussian g2{
+        .mean3d = glm::vec3(1.0f, 1.0f, -10.0f),
+        .scale = glm::vec3(1.0f, 1.0f, 1.0f),
+        .color = glm::vec3(1.0f, 0.0f, 0.0f),
         .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
         .opacity = 1.0f
     };
 
+    D_GS::Gaussian g3{
+        .mean3d = glm::vec3(-2.0f, -2.0f, -10.0f),
+        .scale = glm::vec3(3.0f, 1.0f, 5.0f),
+        .color = glm::vec3(0.0f, 0.0f, 1.0f),
+        .rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
+        .opacity = 0.7f
+    };
+
     std::vector<Gaussian> h_gaussians{
-      g1
+      g1, g2, g3
     };
 
     size_t gc = h_gaussians.size();
@@ -156,7 +155,6 @@ int main()
     std::vector<pixel>& img = renderer.getImage();
 
     pixel* d_image = nullptr;
-    curandState *d_rand_state = nullptr;
 
     Gaussian* d_gaussians = nullptr;
     float* d_cov3Ds = nullptr;
@@ -167,37 +165,36 @@ int main()
 
     size_t ele_num = img.size();
 
-    uint32_t image_size = ele_num * sizeof(pixel);
+    uint32_t image_size = static_cast<uint32_t>(ele_num);
+    size_t image_bytes = ele_num * sizeof(pixel);
 
-    cudaMalloc((void**)&d_image, image_size);
-    cudaMalloc((void**)&d_rand_state, image_size);
+    CUDA_CHECK(cudaMalloc((void**)&d_image, image_bytes));
 
-    size_t gaussian_size = gc * sizeof(Gaussian);
+    size_t gaussian_size = gc * sizeof(D_GS::Gaussian);
     size_t cov3Ds_size = gc * sizeof(float);
     size_t inv_cov_size = gc * sizeof(float3);
     size_t pix_mean_size = gc * sizeof(glm::vec2);
 
-    cudaMalloc((void**)&d_gaussians, gaussian_size);
-    cudaMalloc((void**)&d_cov3Ds, cov3Ds_size);
-    cudaMalloc((void**)&d_inv_cov, inv_cov_size);
-    cudaMalloc((void**)&d_pix_mean, pix_mean_size);
-    cudaMalloc((void**)&d_proj_mat, sizeof(glm::mat4));
-    cudaMalloc((void**)&d_view_mat, sizeof(glm::mat4));
+    CUDA_CHECK(cudaMalloc((void**)&d_gaussians, gaussian_size));
 
-    cudaMemcpy(d_image, img.data(), image_size, cudaMemcpyHostToDevice);
+    CUDA_CHECK(cudaMalloc((void**)&d_cov3Ds, cov3Ds_size));
+    CUDA_CHECK(cudaMalloc((void**)&d_inv_cov, inv_cov_size));
+    CUDA_CHECK(cudaMalloc((void**)&d_pix_mean, pix_mean_size));
+    CUDA_CHECK(cudaMalloc((void**)&d_proj_mat, sizeof(glm::mat4)));
+    CUDA_CHECK(cudaMalloc((void**)&d_view_mat, sizeof(glm::mat4)));
 
-    cudaMemcpy(d_gaussians, h_gaussians.data(), gaussian_size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_proj_mat, glm::value_ptr(projMat), sizeof(glm::mat4), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_view_mat, glm::value_ptr(viewMat), sizeof(glm::mat4), cudaMemcpyHostToDevice);
-    cudaMemset(d_cov3Ds, 0, cov3Ds_size);
-    cudaMemset(d_inv_cov, 0, inv_cov_size);
-    cudaMemset(d_pix_mean, 0, pix_mean_size);
+    CUDA_CHECK(cudaMemcpy(d_image, img.data(), image_bytes, cudaMemcpyHostToDevice));
 
-    int threads = 256;
+    CUDA_CHECK(cudaMemcpy(d_gaussians, h_gaussians.data(), gaussian_size, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_proj_mat, glm::value_ptr(projMat), sizeof(glm::mat4), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_view_mat, glm::value_ptr(viewMat), sizeof(glm::mat4), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemset(d_cov3Ds, 0, cov3Ds_size));
+    CUDA_CHECK(cudaMemset(d_inv_cov, 0, inv_cov_size));
+    CUDA_CHECK(cudaMemset(d_pix_mean, 0, pix_mean_size));
+
+    int threads = std::min(256, static_cast<int>(gc));
 
     int blocks_preprocess = (gc + threads - 1) / threads;
-
-    cudaError_t err = cudaGetLastError();
 
     D_GS::preprocess<<<blocks_preprocess, threads>>>(
         FOCAL_X, FOCAL_Y, HEIGHT, WIDTH,
@@ -205,36 +202,28 @@ int main()
         d_inv_cov, d_pix_mean,
         d_view_mat, d_proj_mat, gc);
 
-    err = cudaGetLastError();
-    if(err != cudaSuccess)
-    {
-        std::cout << "WTFFF " << cudaGetErrorString(err) << std::endl;
-    }
+    CUDA_KERNEL_CHECK();
 
     int blocks_render = (ele_num + threads - 1) / threads;
 
-//     init_rand<<<blocks, threads>>>(d_rand_state, dist_ull(gen));
-//
-//     randomPixel<<<blocks, threads>>>(d_rand_state, d_image, ele_num);
     renderGaussians<<<blocks_render, threads>>>(
-        d_pix_mean, d_inv_cov, d_image, image_size, gc
+        d_gaussians,
+        d_pix_mean,
+        d_inv_cov,
+        d_image,
+        static_cast<uint32_t>(image_size),
+        static_cast<uint32_t>(gc)
     );
-    err = cudaGetLastError();
-    if(err != cudaSuccess)
-    {
-        std::cout << "WTFFF " << cudaGetErrorString(err) << std::endl;
-    }
-    cudaDeviceSynchronize();
+    CUDA_KERNEL_CHECK();
 
-    cudaMemcpy(img.data(), d_image, image_size, cudaMemcpyDeviceToHost);
+    CUDA_CHECK(cudaMemcpy(img.data(), d_image, image_bytes, cudaMemcpyDeviceToHost));
 
     renderer.saveToPPM("image.ppm");
 
-    cudaFree(d_image);
-    cudaFree(d_rand_state);
-    cudaFree(d_gaussians);
-    cudaFree(d_cov3Ds);
-    cudaFree(d_inv_cov);
-    cudaFree(d_pix_mean);
+    CUDA_CHECK(cudaFree(d_image));
+    CUDA_CHECK(cudaFree(d_gaussians));
+    CUDA_CHECK(cudaFree(d_cov3Ds));
+    CUDA_CHECK(cudaFree(d_inv_cov));
+    CUDA_CHECK(cudaFree(d_pix_mean));
     return 0;
 }

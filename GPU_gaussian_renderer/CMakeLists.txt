@@ -25,6 +25,11 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(glm)
 
+# global DEBUG define for all targets builded with Debug config
+add_compile_definitions(
+  $<$<CONFIG:Debug>:DEBUG>
+)
+
 add_library(${HOST_LIB})
 
 target_sources(${HOST_LIB}
@@ -61,6 +66,7 @@ target_sources(${DEVICE_LIB}
       cuda/renderer_cuda.cuh
       cuda/helpers.cuh
       cuda/gaussian.cuh
+      cuda/cuda_check.cuh
 )
 
 target_compile_options(${DEVICE_LIB} PRIVATE
@@ -74,7 +80,7 @@ add_executable(${PROJECT_NAME})
 # target_compile_options(${PROJECT_NAME} PRIVATE -G -g -O0)
 
 target_compile_options(${PROJECT_NAME} PRIVATE
-    $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo;-G>
+    $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo;-G;-g>
     # $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>
     $<$<COMPILE_LANGUAGE:CXX>:-g;-O0>
 )
