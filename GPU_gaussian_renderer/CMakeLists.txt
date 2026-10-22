@@ -56,7 +56,7 @@ target_sources(${DEVICE_LIB}
     cuda/ppm_cuda.cu
     cuda/renderer_cuda.cu
     cuda/gaussian.cu
-    cuda/helpers.cu
+    # cuda/helpers.cu
   PUBLIC
     FILE_SET HEADERS
     BASE_DIRS
@@ -74,6 +74,20 @@ target_compile_options(${DEVICE_LIB} PRIVATE
     # $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>
     $<$<COMPILE_LANGUAGE:CXX>:-g;-O0>
 )
+
+# https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/nvcc.html#separate-compilation-of-gpu-code
+# it's needed because nvcc does not see the helpers.cu definitions
+# By default nvcc expects whole-program compilation, and expects that all
+# GPU code/symbols will be present in one unit during compilation
+# So either inline tour __device__ function and create both declaration
+# and definition in header file or set this:
+# set_target_properties(
+#   ${DEVICE_LIB}
+#   PROPERTIES
+#   CMAKE_CUDA_SEPARABLE_COMPILATION ON
+#   )
+# or -rdc = true
+# It may introduce a small overhead due to linking stuff
 
 add_executable(${PROJECT_NAME})
 

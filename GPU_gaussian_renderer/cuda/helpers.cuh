@@ -1,5 +1,104 @@
-#pragma once
+#ifndef HELPERS_CUH
+#define HELPERS_CUH
 
 namespace D_GS
 {
+//     __device__ float dot(float2 a, float2 b);
+//
+//     __device__ float dot(float3 a, float3 b);
+//
+//     __device__ float3 cross(float3 a, float3 b);
+//
+//     __device__ float3 normalize(float3 v);
+//
+//     // with translate part (last columnt of matrix)
+//     __device__ float3 transform_point3(const float* M, const float3& p);
+//
+//     __device__ float4 transform_point4(const float* M, const float3& p);
+//
+//     __device__ float4 transform_point4(const float* M, const float4& p);
+//
+//     __device__ float3 transform_direction(const float* M, float3 v);
+//
+//     __device__ float2 mat2_mul_vec2(const float* M, float2 v);
+//
+//     // without translate part
+//     __device__ float3 mat4_mul_vec3(const float* M, float3 v);
+//
+//     __device__ float4 mat4_mul_vec4(const float* M, float4 v);
+
+
+    __device__ __forceinline__ float dot(float2 a, float2 b)
+    {
+        return a.x * b.x + a.y * b.y;
+    }
+
+    __device__ __forceinline__ float dot(float3 a, float3 b)
+    {
+        return a.x * b.x + a.y * b.y + a.z * b.z;
+    }
+
+    __device__ __forceinline__ float3 transform_point3(const float*M, const float3& p)
+    {
+        float3 res = {
+          M[0] * p.x +  M[4] * p.y + M[8] * p.z + M[12],
+          M[1] * p.x +  M[5] * p.y + M[9] * p.z + M[13],
+          M[2] * p.x +  M[6] * p.y + M[10] * p.z + M[14],
+        };
+        return res;
+    }
+
+    __device__ __forceinline__ float4 transform_point4(const float*M, const float3& p)
+    {
+        float4 res = {
+          M[0] * p.x +  M[4] * p.y + M[8] * p.z + M[12],
+          M[1] * p.x +  M[5] * p.y + M[9] * p.z + M[13],
+          M[2] * p.x +  M[6] * p.y + M[10] * p.z + M[14],
+          M[3] * p.x +  M[7] * p.y + M[11] * p.z + M[15],
+        };
+        return res;
+    }
+
+    __device__ __forceinline__ float4 transform_point4(const float* M, const float4& p)
+    {
+        float4 res = {
+          M[0] * p.x +  M[4] * p.y + M[8] * p.z + M[12] * p.w,
+          M[1] * p.x +  M[5] * p.y + M[9] * p.z + M[13] * p.w,
+          M[2] * p.x +  M[6] * p.y + M[10] * p.z + M[14] * p.w,
+          M[3] * p.x +  M[7] * p.y + M[11] * p.z + M[15] * p.w,
+        };
+        return res;
+    }
+
+
+    __device__ __forceinline__ float2 mat2_mul_vec2(const float* M, float2 v)
+    {
+        return make_float2(
+          M[0] * v.x + M[2] * v.y,
+          M[1] * v.x + M[3] * v.y
+        );
+    }
+
+    __device__ __forceinline__ float3 mat4_mul_vec3(const float*M, float3 v)
+    {
+        float3 p = {
+          M[0] * v.x +  M[4] * v.y + M[8] * v.z,
+          M[1] * v.x +  M[5] * v.y + M[9] * v.z,
+          M[2] * v.x +  M[6] * v.y + M[10] * v.z,
+        };
+        return p;
+    }
+
+    __device__ __forceinline__ float4 mat4_mul_vec4(const float*M, float4 v)
+    {
+        float4 p = {
+          M[0] * v.x +  M[4] * v.y + M[8] * v.z,
+          M[1] * v.x +  M[5] * v.y + M[9] * v.z,
+          M[2] * v.x +  M[6] * v.y + M[10] * v.z,
+          M[3] * v.x +  M[7] * v.y + M[11] * v.z,
+        };
+        return p;
+    }
 }
+
+#endif

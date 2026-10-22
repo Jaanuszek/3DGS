@@ -1,4 +1,5 @@
 #include "gaussian.cuh"
+#include "helpers.cuh"
 #include <glm/matrix.hpp>
 // #include <__clang_cuda_builtin_vars.h>
 
@@ -10,9 +11,9 @@ namespace D_GS
         Gaussian* gaussians,
         float* cov3Ds,
         float3* inv_sigma,
-        glm::vec2* pix_mean,
-        const glm::mat4 *viewMat,
-        const glm::mat4 *projMat,
+        float2* pix_mean,
+        const float *viewMat,
+        const float *projMat,
         const int gc)
     {
         int idx = threadIdx.x + blockDim.x * blockIdx.x;
@@ -35,11 +36,14 @@ namespace D_GS
         // 7.2 mean_pixel (as float2 -> x,y)
 
         // 0.
-        glm::vec4 pointCam = *viewMat * glm::vec4(gs.mean3d, 1.0f);
-        glm::vec4 pointProj = *projMat * pointCam;
+        // glm::vec4 pointCam = *viewMat * glm::vec4(gs.mean3d, 1.0f);
+        // glm::vec4 pointProj = *projMat * pointCam;
+        float4 pointCam = transform_point4(viewMat, gs.mean3d);
+        float4 pointProj = transform_point4(projMat, pointCam);
+
 
         // 1.
-        if(!in_frustum(gs.mean3d, *viewMat, *projMat))
+        if(!in_frustum(gs.mean3d, viewMat, projMat))
             return;
 
         // 2.
@@ -49,7 +53,7 @@ namespace D_GS
         // 3, 4.
         float3 cov2D = computeCov2D(
             gs.mean3d, cov3D,
-            *viewMat, f_x, f_y
+            viewMat, f_x, f_y
         );
 
         // 5.
@@ -59,10 +63,10 @@ namespace D_GS
 
         // 6.5
         // p_proj is in cartesian cords (3D not 4D)
-        glm::vec3 p_proj = hom2Cart(pointProj);
+        float3 p_proj = hom2Cart(pointProj);
 
         // 6.
-        glm::vec2 mean_pix = glm::vec2(
+        float2 mean_pix = make_float2(
           ndc2Pix(p_proj.x, W),
           ndc2Pix_inv(p_proj.y, H)
         );
@@ -72,9 +76,9 @@ namespace D_GS
     }
 
     __device__ bool in_frustum(
-        const glm::vec3& pos,
-        const glm::mat4& viewMat,
-        const glm::mat4& projMat
+        const float3& pos,
+        const float* viewMat,
+        const float* projMat
     )
     {
         // 0. Transfer gauss pos from world cords to clip space
@@ -86,8 +90,8 @@ namespace D_GS
         // 1.4 wc > 0
 
         // glm is column - major, therefore MAT * POINT is a proper order
-        glm::vec4 pointCam = viewMat * glm::vec4(pos, 1.0f);
-        glm::vec4 pointProj = projMat * pointCam;
+        float4 pointCam = transform_point4(viewMat, pos);
+        float4 pointProj = transform_point4(projMat, pointCam);
 
         bool isVisible = pointProj.w > 0.0f && // to not divide by zero in perspective division
             pointProj.z >= -pointProj.w && // near
@@ -103,16 +107,27 @@ namespace D_GS
         return false;
     }
 
-    __device__ void computeCov3D(const glm::vec3& scale, const glm::quat& rotation, float* cov3D)
+    __device__ void computeCov3D(const float3& scale, const float4& rotation, float* cov3D)
     {
         glm::mat3 scale_m = glm::mat3(1.0f);
         scale_m[0][0] = scale.x;
         scale_m[1][1] = scale.y;
         scale_m[2][2] = scale.z;
 
-        glm::mat3 rotation_m = glm::mat3_cast(glm::normalize(rotation));
+        float4 q = rotation;
+        const float w = q.x;
+        const float x = q.y;
+        const float y = q.z;
+        const float z = q.w;
 
-        glm::mat3 Sigma = rotation_m * scale_m * glm::transpose(scale_m) * glm::transpose(rotation_m);
+        // TODO normalize this quaternion
+        glm::mat3 R = glm::mat3(
+            1.0f - 2.0f * (y*y + z*z), 2.0f*(x*y + z*w), 2*(x*z - y*w),
+            2.0f*(x*y - z*w), 1.0f-2.0f*(x*x + z*z), 2*(y*z+x*w),
+            2.0f*(x*z + y*w), 2*(y*z - x*w), 1.0f - 2.0f*(x*x + y*y)
+        );
+
+        glm::mat3 Sigma = R * scale_m * glm::transpose(scale_m) * glm::transpose(R);
 
         cov3D[0] = Sigma[0][0];
         cov3D[1] = Sigma[0][1];
@@ -122,11 +137,11 @@ namespace D_GS
         cov3D[5] = Sigma[2][2];
     }
 
-    __device__ float3 computeCov2D(const glm::vec3& mean, const float* cov3D, const glm::mat4& view_m, float f_x, float f_y)
+    __device__ float3 computeCov2D(const float3& mean, const float* cov3D, const float* view_m, float f_x, float f_y)
     {
         // I might add here bigger fov, so gaussian tat has center near camera
         // frustum can be rendered. See computeCov2D here https://github.com/graphdeco-inria/diff-gaussian-rasterization/blob/59f5f77e3ddbac3ed9db93ec2cfe99ed6c5d121d/cuda_rasterizer/forward.cu#L74
-        glm::vec4 pointCam = view_m * glm::vec4(mean, 1.0f);
+        float4 pointCam = transform_point4(view_m, mean);
 
         float z_2 = pointCam.z * pointCam.z;
         glm::mat3x2 J = glm::mat3x2(
@@ -136,7 +151,12 @@ namespace D_GS
         );
 
         // rotation part of view matrix
-        glm::mat3 W = glm::mat3(view_m);
+        // In case of issues check if this indexing is correct!
+        glm::mat3 W = glm::mat3(
+            view_m[0], view_m[1], view_m[2],
+            view_m[4], view_m[5], view_m[6],
+            view_m[8], view_m[9], view_m[10]
+        );
 
         glm::mat3 cov3d_mat = glm::mat3(
             cov3D[0], cov3D[1], cov3D[2],
@@ -170,10 +190,10 @@ namespace D_GS
        inv_sigma.z = det_inv * a;
     }
 
-    __device__ glm::vec3 hom2Cart(const glm::vec4& p_hom)
+    __device__ float3 hom2Cart(const float4& p_hom)
     {
         float p_w = 1.0f / p_hom.w;
-        return glm::vec3(p_hom.x * p_w, p_hom.y * p_w, p_hom.z * p_w);
+        return make_float3(p_hom.x * p_w, p_hom.y * p_w, p_hom.z * p_w);
     }
 
     __device__ float ndc2Pix(const float v, const float S)
