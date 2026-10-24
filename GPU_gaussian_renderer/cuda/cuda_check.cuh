@@ -24,6 +24,6 @@
         } while(0)
 
 #else
-    #define CUDA_CHECK(call) ((void)0)
-    #define CUDA_KERNEL_CHECK() ((void)0)
+    #define CUDA_CHECK(call) (call)
+    #define CUDA_KERNEL_CHECK()
 #endif
