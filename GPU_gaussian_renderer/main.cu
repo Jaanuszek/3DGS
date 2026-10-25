@@ -141,8 +141,16 @@ int main()
         .opacity = 0.7f
     };
 
+    D_GS::Gaussian g4{
+            .rotation = make_float4(1.0f, 0.0f, 0.0f, 0.0f),
+            .mean3d = make_float3(-5.0f, -5.0f, -15.0f),
+            .scale = make_float3(3.0f, 1.0f, 5.0f),
+            .color = make_float3(1.0f, 1.0f, 0.0f),
+            .opacity = 0.7f
+        };
+
     std::vector<Gaussian> h_gaussians{
-      g1, g2, g3
+      g1, g2, g3, g4
     };
 
     size_t gc = h_gaussians.size();
@@ -167,6 +175,7 @@ int main()
     float* d_cov3Ds = nullptr;
     float3* d_inv_cov = nullptr;
     float2* d_pix_mean = nullptr;
+    float* d_depth = nullptr;
     float* d_proj_mat = nullptr;
     float* d_view_mat = nullptr;
 
@@ -178,16 +187,18 @@ int main()
     CUDA_CHECK(cudaMalloc((void**)&d_image, image_bytes));
 
     size_t gaussian_size = gc * sizeof(D_GS::Gaussian);
-    size_t cov3Ds_size = gc * sizeof(float);
+    size_t gs_float_size = gc * sizeof(float);
+    // size_t cov3Ds_size = gc * sizeof(float);
     size_t inv_cov_size = gc * sizeof(float3);
     size_t pix_mean_size = gc * sizeof(float2);
     size_t mat4x4_size_f = 16 * sizeof(float);
 
     CUDA_CHECK(cudaMalloc((void**)&d_gaussians, gaussian_size));
 
-    CUDA_CHECK(cudaMalloc((void**)&d_cov3Ds, cov3Ds_size));
+    CUDA_CHECK(cudaMalloc((void**)&d_cov3Ds, gs_float_size));
     CUDA_CHECK(cudaMalloc((void**)&d_inv_cov, inv_cov_size));
     CUDA_CHECK(cudaMalloc((void**)&d_pix_mean, pix_mean_size));
+    CUDA_CHECK(cudaMalloc((void**)&d_depth, gs_float_size));
     CUDA_CHECK(cudaMalloc((void**)&d_proj_mat, mat4x4_size_f));
     CUDA_CHECK(cudaMalloc((void**)&d_view_mat, mat4x4_size_f));
 
@@ -196,9 +207,10 @@ int main()
     CUDA_CHECK(cudaMemcpy(d_gaussians, h_gaussians.data(), gaussian_size, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_proj_mat, glm::value_ptr(projMat), mat4x4_size_f, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_view_mat, glm::value_ptr(viewMat), mat4x4_size_f, cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemset(d_cov3Ds, 0, cov3Ds_size));
+    CUDA_CHECK(cudaMemset(d_cov3Ds, 0, gs_float_size));
     CUDA_CHECK(cudaMemset(d_inv_cov, 0, inv_cov_size));
     CUDA_CHECK(cudaMemset(d_pix_mean, 0, pix_mean_size));
+    CUDA_CHECK(cudaMemset(d_depth, 0, gs_float_size));
 
     int threads = std::min(256, static_cast<int>(gc));
 
@@ -211,7 +223,7 @@ int main()
     D_GS::preprocess<<<blocks_preprocess, threads>>>(
         FOCAL_X, FOCAL_Y, HEIGHT, WIDTH,
         d_gaussians, d_cov3Ds,
-        d_inv_cov, d_pix_mean,
+        d_inv_cov, d_pix_mean, d_depth,
         d_view_mat, d_proj_mat, gc);
     cudaEventRecord(stop,0);
     cudaEventSynchronize(stop);
@@ -257,5 +269,6 @@ int main()
     CUDA_CHECK(cudaFree(d_cov3Ds));
     CUDA_CHECK(cudaFree(d_inv_cov));
     CUDA_CHECK(cudaFree(d_pix_mean));
+    CUDA_CHECK(cudaFree(d_depth));
     return 0;
 }

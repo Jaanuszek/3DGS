@@ -1,5 +1,7 @@
 #pragma once
 
+#include "defines.hpp"
+
 #include <glm/glm.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/quaternion_common.hpp>
@@ -17,6 +19,14 @@ namespace D_GS
         float opacity;
     };
 
+    struct TileRange
+    {
+        uint32_t tx_min,
+                tx_max,
+                ty_min,
+                ty_max;
+    };
+
     // gc - gaussian count
     __global__ void preprocess(
         const float f_x, const float f_y,
@@ -25,6 +35,7 @@ namespace D_GS
         float* cov3Ds,
         float3* inv_sigma,
         float2* pix_mean,
+        float* depth,
         const float *viewMat,
         const float *projMat,
         const int gc);
@@ -49,4 +60,6 @@ namespace D_GS
     __device__ float ndc2Pix(const float v, const float S);
 
     __device__ float ndc2Pix_inv(const float v, const float S);
+
+    __device__ TileRange getRect(float dist, float3 cov2D, float2 mean_pix);
 }

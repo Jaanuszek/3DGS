@@ -12,6 +12,7 @@ namespace D_GS
         float* cov3Ds,
         float3* inv_sigma,
         float2* pix_mean,
+        float* depth,
         const float *viewMat,
         const float *projMat,
         const int gc)
@@ -41,6 +42,7 @@ namespace D_GS
         float4 pointCam = transform_point4(viewMat, gs.mean3d);
         float4 pointProj = transform_point4(projMat, pointCam);
 
+        depth[idx] = pointCam.z;
 
         // 1.
         if(!in_frustum(gs.mean3d, viewMat, projMat))
@@ -204,5 +206,34 @@ namespace D_GS
     __device__ float ndc2Pix_inv(const float v, const float S)
     {
         return ((1.0f - v) * S - 1.0f) * 0.5f;
+    }
+
+    __device__ TileRange getRect(float dist, float3 cov2D, float2 mean_pix);
+    {
+        float a = cov2D.x;
+        float d = cov2D.z;
+
+        float rx = dist * sqrt(a);
+        float ty = dist * sqrt(d);
+
+        const int min_x = static_cast<int>(
+            floor((mean_pix.x - rx) / CONSTANT::TILE_X)
+        );
+        const int max_x = static_cast<int>(
+            ceil((mean_pix.x + rx) / CONSTANT::TILE_X)
+        );
+        const int min_y = static_cast<int>(
+            floor((mean_pix.y - ry) / CONSTANT::TILE_Y)
+        );
+        const int max_y = static_cast<int>(
+            ceil((mean_pix.y + ry) / CONSTANT::TILE_Y)
+        );
+
+        return TileRange{
+            .tx_min = 0,
+            .tx_max = 0,
+            .ty_min = 0,
+            .ty_max = 0
+        };
     }
 }

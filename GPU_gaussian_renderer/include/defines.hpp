@@ -13,4 +13,7 @@ namespace  CONSTANT{
 
     constexpr uint32_t TILE_X = 16;
     constexpr uint32_t TILE_Y = 16;
+
+    constexpr uint32_t GRID_X_MAX = (WIDTH + TILE_X - 1) / TILE_X;
+    constexpr uint32_t GRID_Y_MAX = (HEIGHT + TILE_Y -1) / TILE_Y;
 }
