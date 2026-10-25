@@ -3,31 +3,6 @@
 
 namespace D_GS
 {
-//     __device__ float dot(float2 a, float2 b);
-//
-//     __device__ float dot(float3 a, float3 b);
-//
-//     __device__ float3 cross(float3 a, float3 b);
-//
-//     __device__ float3 normalize(float3 v);
-//
-//     // with translate part (last columnt of matrix)
-//     __device__ float3 transform_point3(const float* M, const float3& p);
-//
-//     __device__ float4 transform_point4(const float* M, const float3& p);
-//
-//     __device__ float4 transform_point4(const float* M, const float4& p);
-//
-//     __device__ float3 transform_direction(const float* M, float3 v);
-//
-//     __device__ float2 mat2_mul_vec2(const float* M, float2 v);
-//
-//     // without translate part
-//     __device__ float3 mat4_mul_vec3(const float* M, float3 v);
-//
-//     __device__ float4 mat4_mul_vec4(const float* M, float4 v);
-
-
     __device__ __forceinline__ float dot(float2 a, float2 b)
     {
         return a.x * b.x + a.y * b.y;
@@ -98,6 +73,21 @@ namespace D_GS
           M[3] * v.x +  M[7] * v.y + M[11] * v.z,
         };
         return p;
+    }
+
+    __device__ __forceinline__ int clamp(int f, int a, int b)
+    {
+        return max(a, min(f, b));
+    }
+
+    __device__ __forceinline__ int2 clamp(int2 v, int a, int b)
+    {
+        return make_int2(clamp(v.x, a, b), clamp(v.y, a, b));
+    }
+
+    __device__ __forceinline__ int2 clamp(int2 v, int2 a, int2 b)
+    {
+        return make_int2(clamp(v.x, a.x, b.x), clamp(v.y, a.y, b.y));
     }
 }
 

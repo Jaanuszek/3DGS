@@ -13,6 +13,7 @@ namespace D_GS
         float3* inv_sigma,
         float2* pix_mean,
         float* depth,
+        uint32_t* tiles_touched,
         const float *viewMat,
         const float *projMat,
         const int gc)
@@ -35,6 +36,7 @@ namespace D_GS
         // 7. Store necessary data in global memory
         // 7.1 invSigma (inv 2D covariance mat)
         // 7.2 mean_pixel (as float2 -> x,y)
+        // 8. Compute and save number of tiles touched by this particular gaussian
 
         // 0.
         // glm::vec4 pointCam = *viewMat * glm::vec4(gs.mean3d, 1.0f);
@@ -42,7 +44,8 @@ namespace D_GS
         float4 pointCam = transform_point4(viewMat, gs.mean3d);
         float4 pointProj = transform_point4(projMat, pointCam);
 
-        depth[idx] = pointCam.z;
+        tiles_touched[idx] = 0;
+
 
         // 1.
         if(!in_frustum(gs.mean3d, viewMat, projMat))
@@ -73,8 +76,16 @@ namespace D_GS
           ndc2Pix_inv(p_proj.y, H)
         );
 
+        // 8.
+        TileRange t_range = getRect(CONSTANT::AABB_DIST, cov2D, mean_pix);
+        uint32_t t_touched = (t_range.t_max.x - t_range.t_min.x) * (t_range.t_max.y - t_range.t_min.y);
+        if(t_touched == 0)
+            return; // return before saving anything to memory since this gaussian will be irrelevant
+
         //7.
+        depth[idx] = pointCam.z;
         pix_mean[idx] = mean_pix;
+        tiles_touched[idx] = t_touched;
     }
 
     __device__ bool in_frustum(
@@ -208,13 +219,13 @@ namespace D_GS
         return ((1.0f - v) * S - 1.0f) * 0.5f;
     }
 
-    __device__ TileRange getRect(float dist, float3 cov2D, float2 mean_pix);
+    __device__ TileRange getRect(float dist, float3 cov2D, float2 mean_pix)
     {
         float a = cov2D.x;
         float d = cov2D.z;
 
         float rx = dist * sqrt(a);
-        float ty = dist * sqrt(d);
+        float ry = dist * sqrt(d);
 
         const int min_x = static_cast<int>(
             floor((mean_pix.x - rx) / CONSTANT::TILE_X)
@@ -229,11 +240,14 @@ namespace D_GS
             ceil((mean_pix.y + ry) / CONSTANT::TILE_Y)
         );
 
+        int2 tile_min = make_int2(min_x, min_y);
+        int2 tile_max = make_int2(max_x, max_y);
+        int2 range_min = make_int2(0,0);
+        int2 range_max = make_int2(CONSTANT::GRID_X_MAX, CONSTANT::GRID_Y_MAX);
+
         return TileRange{
-            .tx_min = 0,
-            .tx_max = 0,
-            .ty_min = 0,
-            .ty_max = 0
+            .t_min = clamp(tile_min, range_min, range_max),
+            .t_max = clamp(tile_max, range_min, range_max)
         };
     }
 }

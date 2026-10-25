@@ -21,10 +21,8 @@ namespace D_GS
 
     struct TileRange
     {
-        uint32_t tx_min,
-                tx_max,
-                ty_min,
-                ty_max;
+        int2 t_min;
+        int2 t_max;
     };
 
     // gc - gaussian count
@@ -36,6 +34,7 @@ namespace D_GS
         float3* inv_sigma,
         float2* pix_mean,
         float* depth,
+        uint32_t* tiles_touched,
         const float *viewMat,
         const float *projMat,
         const int gc);

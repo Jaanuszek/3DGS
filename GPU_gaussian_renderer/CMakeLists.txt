@@ -42,6 +42,7 @@ target_sources(${HOST_LIB}
       include
     FILES
       # include/ppm.hpp
+      include/defines.hpp
       include/renderer.hpp
 )
 
@@ -73,6 +74,10 @@ target_compile_options(${DEVICE_LIB} PRIVATE
     $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo;-G>
     # $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>
     $<$<COMPILE_LANGUAGE:CXX>:-g;-O0>
+)
+
+target_link_libraries(${DEVICE_LIB} PRIVATE
+  ${HOST_LIB}
 )
 
 # https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/nvcc.html#separate-compilation-of-gpu-code

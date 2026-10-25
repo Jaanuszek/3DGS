@@ -10,6 +10,7 @@
 #include <curand_kernel.h>
 #include "cuda/helpers.cuh"
 #include "cuda_check.cuh"
+#include <cub/cub.cuh>
 
 #include "cuda/gaussian.cuh"
 #include "include/defines.hpp"
@@ -20,9 +21,8 @@
 
 namespace
 {
-    // constexpr uint32_t MIN = 0;
     constexpr uint32_t MAX = 255;
-//
+
     constexpr uint32_t WIDTH = 800;
     constexpr uint32_t HEIGHT = 600;
 
@@ -30,17 +30,10 @@ namespace
     constexpr float NEAR = 0.1f;
     constexpr float FAR = 100.0f;
     constexpr float FOV = 90.0f;
-    // constexpr uint32_t GAUSSIANS_COUNT = 200;
-    // constexpr float AABB_DIST = 3;
 
-    // constexpr uint32_t PIXEL_COUNT = WIDTH * HEIGHT;
-
-    // constexpr uint32_t TILE_X = 16;
-    // constexpr uint32_t TILE_Y = 16;
-
-    glm::vec3 cameraPos = glm::vec3(0.0f ,0.0f, 2.0f);
-    glm::vec3 targetPos = glm::vec3(0.0f ,0.0f, 0.0f);
-    glm::vec3 GLOBAL_UP = glm::vec3(0.0f, 1.0f, 0.0f);
+    const glm::vec3 cameraPos = glm::vec3(0.0f ,0.0f, 2.0f);
+    const glm::vec3 targetPos = glm::vec3(0.0f ,0.0f, 0.0f);
+    const glm::vec3 GLOBAL_UP = glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
 using H_GS::pixel;
@@ -178,6 +171,7 @@ int main()
     float* d_depth = nullptr;
     float* d_proj_mat = nullptr;
     float* d_view_mat = nullptr;
+    uint32_t* d_tiles_touched = nullptr;
 
     size_t ele_num = img.size();
 
@@ -188,7 +182,7 @@ int main()
 
     size_t gaussian_size = gc * sizeof(D_GS::Gaussian);
     size_t gs_float_size = gc * sizeof(float);
-    // size_t cov3Ds_size = gc * sizeof(float);
+    size_t gs_uint32_size = gc * sizeof(uint32_t);
     size_t inv_cov_size = gc * sizeof(float3);
     size_t pix_mean_size = gc * sizeof(float2);
     size_t mat4x4_size_f = 16 * sizeof(float);
@@ -201,6 +195,7 @@ int main()
     CUDA_CHECK(cudaMalloc((void**)&d_depth, gs_float_size));
     CUDA_CHECK(cudaMalloc((void**)&d_proj_mat, mat4x4_size_f));
     CUDA_CHECK(cudaMalloc((void**)&d_view_mat, mat4x4_size_f));
+    CUDA_CHECK(cudaMalloc((void**)&d_tiles_touched, gs_uint32_size));
 
     CUDA_CHECK(cudaMemcpy(d_image, img.data(), image_bytes, cudaMemcpyHostToDevice));
 
@@ -211,6 +206,7 @@ int main()
     CUDA_CHECK(cudaMemset(d_inv_cov, 0, inv_cov_size));
     CUDA_CHECK(cudaMemset(d_pix_mean, 0, pix_mean_size));
     CUDA_CHECK(cudaMemset(d_depth, 0, gs_float_size));
+    CUDA_CHECK(cudaMemset(d_tiles_touched, 0, gs_uint32_size));
 
     int threads = std::min(256, static_cast<int>(gc));
 
@@ -224,6 +220,7 @@ int main()
         FOCAL_X, FOCAL_Y, HEIGHT, WIDTH,
         d_gaussians, d_cov3Ds,
         d_inv_cov, d_pix_mean, d_depth,
+        d_tiles_touched,
         d_view_mat, d_proj_mat, gc);
     cudaEventRecord(stop,0);
     cudaEventSynchronize(stop);
