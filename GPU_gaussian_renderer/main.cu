@@ -172,6 +172,7 @@ int main()
     float* d_proj_mat = nullptr;
     float* d_view_mat = nullptr;
     uint32_t* d_tiles_touched = nullptr;
+    uint32_t* d_tiles_offset = nullptr;
 
     size_t ele_num = img.size();
 
@@ -196,6 +197,7 @@ int main()
     CUDA_CHECK(cudaMalloc((void**)&d_proj_mat, mat4x4_size_f));
     CUDA_CHECK(cudaMalloc((void**)&d_view_mat, mat4x4_size_f));
     CUDA_CHECK(cudaMalloc((void**)&d_tiles_touched, gs_uint32_size));
+    CUDA_CHECK(cudaMalloc((void**)&d_tiles_offset, gs_uint32_size));
 
     CUDA_CHECK(cudaMemcpy(d_image, img.data(), image_bytes, cudaMemcpyHostToDevice));
 
@@ -225,13 +227,61 @@ int main()
     cudaEventRecord(stop,0);
     cudaEventSynchronize(stop);
 
+    CUDA_KERNEL_CHECK();
+
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
     printf("Preprocess Time: %f ms\n", milliseconds);
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
 
-    CUDA_KERNEL_CHECK();
+    // Prefix sum of tiles touched [8, 1, 2, 3] -> [8, 9, 11, 14]
+    void *d_temp_storage = nullptr;
+    size_t temp_storage_bytes = 0;
+    // first step get required size of temp_storage_bytes
+    // first argument should be nullptr to determine that
+    CUDA_CHECK(cub::DeviceScan::InclusiveSum(
+        nullptr, temp_storage_bytes,
+        d_tiles_touched, d_tiles_offset, gc
+    ));
+
+    // second step allocate required memory
+    CUDA_CHECK(cudaMalloc(&d_temp_storage, temp_storage_bytes));
+
+    // Finally run inlcusive prefix sum
+    CUDA_CHECK(cub::DeviceScan::InclusiveSum(
+       d_temp_storage, temp_storage_bytes,
+       d_tiles_touched, d_tiles_offset, gc
+    ));
+
+    //test
+    uint32_t* tiles_offset = new uint32_t[gc];
+    uint32_t* tiles_touched = new uint32_t[gc];
+
+    CUDA_CHECK(cudaMemcpy(tiles_offset, d_tiles_offset, gc * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(tiles_touched, d_tiles_touched, gc * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+
+    for(int i = 0; i < gc; i++)
+    {
+        if(tiles_offset[i])
+            std::cout << tiles_offset[i] << " ";
+    }
+    std::cout << '\n';
+    for(int i = 0; i < gc; i++)
+    {
+        if(tiles_touched[i])
+            std::cout << tiles_touched[i] << " ";
+    }
+    std::cout << '\n';
+
+    delete[] tiles_offset;
+    delete[] tiles_touched;
+
+
+
+   // To synchronize asynchronous Cuda operations
+   CUDA_CHECK(cudaDeviceSynchronize());
+   CUDA_CHECK(cudaFree(d_temp_storage));
 
     int blocks_render = (ele_num + threads - 1) / threads;
 
@@ -267,5 +317,7 @@ int main()
     CUDA_CHECK(cudaFree(d_inv_cov));
     CUDA_CHECK(cudaFree(d_pix_mean));
     CUDA_CHECK(cudaFree(d_depth));
+    CUDA_CHECK(cudaFree(d_tiles_touched));
+    CUDA_CHECK(cudaFree(d_tiles_offset));
     return 0;
 }
