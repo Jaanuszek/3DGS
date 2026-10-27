@@ -31,6 +31,7 @@ namespace D_GS
         const uint32_t H, const uint32_t W,
         Gaussian* gaussians,
         float* cov3Ds,
+        float3* cov2Ds,
         float3* inv_sigma,
         float2* pix_mean,
         float* depth,
@@ -38,6 +39,17 @@ namespace D_GS
         const float *viewMat,
         const float *projMat,
         const int gc);
+
+    __global__ void gaussToTile(
+        const float dist,
+        const float* depth,
+        const float3* cov2D,
+        const float2* mean_pix,
+        const uint32_t* offsets,
+        uint64_t* keys_unsorted, // (uint32_t)TILE_ID | (uint32_t)DEPTH
+        uint32_t* values_unsorted, // idx
+        const int gc
+    );
 
     // Check if gaussian is visible by camera
     __device__ bool in_frustum(

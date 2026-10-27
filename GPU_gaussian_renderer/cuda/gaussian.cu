@@ -1,7 +1,6 @@
 #include "gaussian.cuh"
 #include "helpers.cuh"
 #include <glm/matrix.hpp>
-// #include <__clang_cuda_builtin_vars.h>
 
 namespace D_GS
 {
@@ -10,6 +9,7 @@ namespace D_GS
         const uint32_t H, const uint32_t W,
         Gaussian* gaussians,
         float* cov3Ds,
+        float3* cov2Ds,
         float3* inv_sigma,
         float2* pix_mean,
         float* depth,
@@ -83,9 +83,53 @@ namespace D_GS
             return; // return before saving anything to memory since this gaussian will be irrelevant
 
         //7.
-        depth[idx] = pointCam.z;
+        cov2Ds[idx] = cov2D;
+        depth[idx] = -pointCam.z; // it has to be positive value (due to float->uint32_t reinterpret)
         pix_mean[idx] = mean_pix;
         tiles_touched[idx] = t_touched;
+    }
+
+    __global__ void gaussToTile(
+        const float dist,
+        const float* depth,
+        const float3* cov2D,
+        const float2* mean_pix,
+        const uint32_t* offsets,
+        uint64_t* keys_unsorted, // (uint32_t)TILE_ID | (uint32_t)DEPTH
+        uint32_t* values_unsorted, // idx
+        const int gc
+    )
+    {
+        int idx = threadIdx.x + blockDim.x * blockIdx.x;
+        if(idx >= gc)
+            return;
+
+        uint32_t off = (idx == 0) ? 0 : offsets[idx - 1];
+        TileRange tiles_range = getRect(dist, cov2D[idx], mean_pix[idx]);
+
+        const uint32_t minX = max((uint32_t)0, tiles_range.t_min.x);
+        const uint32_t maxX = min(CONSTANT::GRID_X_MAX, tiles_range.t_max.x);
+        const uint32_t minY = max((uint32_t)0, tiles_range.t_min.y);
+        const uint32_t maxY = min(CONSTANT::GRID_Y_MAX, tiles_range.t_max.y);
+
+        for(int y = minY; y < maxY; y++)
+        {
+            for(int x = minX; x < maxX; x++)
+            {
+                uint64_t key = y * CONSTANT::GRID_X_MAX + x;
+                key <<= 32; // shift 32 bites to left
+
+                // float to uint reintepretation works only for positive values
+                // I forgot if depth in my code is positive or not
+                // in case of issues, go back here! <--------------------
+
+                // key |= *((uint33_t*)&depth[idx]); // pointer reintepret float -> uint32_t
+                key |= __float_as_uint(depth[idx]); // cuda intrinsic
+                keys_unsorted[off] = key;
+                values_unsorted[off] = idx;
+                off++;
+            }
+        }
     }
 
     __device__ bool in_frustum(

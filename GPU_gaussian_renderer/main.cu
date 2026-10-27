@@ -166,6 +166,7 @@ int main()
 
     Gaussian* d_gaussians = nullptr;
     float* d_cov3Ds = nullptr;
+    float3* d_cov2Ds = nullptr;
     float3* d_inv_cov = nullptr;
     float2* d_pix_mean = nullptr;
     float* d_depth = nullptr;
@@ -173,6 +174,8 @@ int main()
     float* d_view_mat = nullptr;
     uint32_t* d_tiles_touched = nullptr;
     uint32_t* d_tiles_offset = nullptr;
+    uint64_t* d_keys_unsorted = nullptr;
+    uint32_t* d_values_unsorted = nullptr;
 
     size_t ele_num = img.size();
 
@@ -183,16 +186,18 @@ int main()
 
     size_t gaussian_size = gc * sizeof(D_GS::Gaussian);
     size_t gs_float_size = gc * sizeof(float);
+    size_t gs_float2_size = gc * sizeof(float2);
+    size_t gs_float3_size = gc * sizeof(float3);
     size_t gs_uint32_size = gc * sizeof(uint32_t);
     size_t inv_cov_size = gc * sizeof(float3);
-    size_t pix_mean_size = gc * sizeof(float2);
     size_t mat4x4_size_f = 16 * sizeof(float);
 
     CUDA_CHECK(cudaMalloc((void**)&d_gaussians, gaussian_size));
 
     CUDA_CHECK(cudaMalloc((void**)&d_cov3Ds, gs_float_size));
+    CUDA_CHECK(cudaMalloc((void**)&d_cov2Ds, gs_float3_size));
     CUDA_CHECK(cudaMalloc((void**)&d_inv_cov, inv_cov_size));
-    CUDA_CHECK(cudaMalloc((void**)&d_pix_mean, pix_mean_size));
+    CUDA_CHECK(cudaMalloc((void**)&d_pix_mean, gs_float2_size));
     CUDA_CHECK(cudaMalloc((void**)&d_depth, gs_float_size));
     CUDA_CHECK(cudaMalloc((void**)&d_proj_mat, mat4x4_size_f));
     CUDA_CHECK(cudaMalloc((void**)&d_view_mat, mat4x4_size_f));
@@ -205,8 +210,9 @@ int main()
     CUDA_CHECK(cudaMemcpy(d_proj_mat, glm::value_ptr(projMat), mat4x4_size_f, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_view_mat, glm::value_ptr(viewMat), mat4x4_size_f, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemset(d_cov3Ds, 0, gs_float_size));
+    CUDA_CHECK(cudaMemset(d_cov2Ds, 0, gs_float3_size));
     CUDA_CHECK(cudaMemset(d_inv_cov, 0, inv_cov_size));
-    CUDA_CHECK(cudaMemset(d_pix_mean, 0, pix_mean_size));
+    CUDA_CHECK(cudaMemset(d_pix_mean, 0, gs_float2_size));
     CUDA_CHECK(cudaMemset(d_depth, 0, gs_float_size));
     CUDA_CHECK(cudaMemset(d_tiles_touched, 0, gs_uint32_size));
 
@@ -220,7 +226,7 @@ int main()
     cudaEventRecord(start, 0);
     D_GS::preprocess<<<blocks_preprocess, threads>>>(
         FOCAL_X, FOCAL_Y, HEIGHT, WIDTH,
-        d_gaussians, d_cov3Ds,
+        d_gaussians, d_cov3Ds, d_cov2Ds,
         d_inv_cov, d_pix_mean, d_depth,
         d_tiles_touched,
         d_view_mat, d_proj_mat, gc);
@@ -254,28 +260,51 @@ int main()
        d_tiles_touched, d_tiles_offset, gc
     ));
 
-    //test
-    uint32_t* tiles_offset = new uint32_t[gc];
-    uint32_t* tiles_touched = new uint32_t[gc];
+    // Last element of inclusive prefix sum contains the number of tiles in total
+    // so lets copy only the last value
+    uint32_t total_tiles = 0;
+    CUDA_CHECK(cudaMemcpy(
+       &total_tiles,
+       &d_tiles_offset[gc-1],
+       sizeof(uint32_t),
+       cudaMemcpyDeviceToHost
+    ));
 
-    CUDA_CHECK(cudaMemcpy(tiles_offset, d_tiles_offset, gc * sizeof(uint32_t), cudaMemcpyDeviceToHost));
-    CUDA_CHECK(cudaMemcpy(tiles_touched, d_tiles_touched, gc * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMalloc((void**)&d_keys_unsorted, total_tiles * sizeof(uint64_t)));
+    CUDA_CHECK(cudaMalloc((void**)&d_values_unsorted, total_tiles * sizeof(uint32_t)));
 
-    for(int i = 0; i < gc; i++)
-    {
-        if(tiles_offset[i])
-            std::cout << tiles_offset[i] << " ";
-    }
-    std::cout << '\n';
-    for(int i = 0; i < gc; i++)
-    {
-        if(tiles_touched[i])
-            std::cout << tiles_touched[i] << " ";
-    }
-    std::cout << '\n';
+    // Get (unsorted) key-values arrays
+    D_GS::gaussToTile<<<blocks_preprocess, threads>>>(
+        CONSTANT::AABB_DIST,
+        d_depth, d_cov2Ds, d_pix_mean,
+        d_tiles_offset, d_keys_unsorted,
+        d_values_unsorted, gc
+    );
 
-    delete[] tiles_offset;
-    delete[] tiles_touched;
+    CUDA_KERNEL_CHECK();
+
+//     //test
+//     uint32_t* tiles_offset = new uint32_t[gc];
+//     uint32_t* tiles_touched = new uint32_t[gc];
+//
+//     CUDA_CHECK(cudaMemcpy(tiles_offset, d_tiles_offset, gc * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+//     CUDA_CHECK(cudaMemcpy(tiles_touched, d_tiles_touched, gc * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+//
+//     for(int i = 0; i < gc; i++)
+//     {
+//         if(tiles_offset[i])
+//             std::cout << tiles_offset[i] << " ";
+//     }
+//     std::cout << '\n';
+//     for(int i = 0; i < gc; i++)
+//     {
+//         if(tiles_touched[i])
+//             std::cout << tiles_touched[i] << " ";
+//     }
+//     std::cout << '\n';
+//
+//     delete[] tiles_offset;
+//     delete[] tiles_touched;
 
 
 
@@ -314,10 +343,13 @@ int main()
     CUDA_CHECK(cudaFree(d_image));
     CUDA_CHECK(cudaFree(d_gaussians));
     CUDA_CHECK(cudaFree(d_cov3Ds));
+    CUDA_CHECK(cudaFree(d_cov2Ds));
     CUDA_CHECK(cudaFree(d_inv_cov));
     CUDA_CHECK(cudaFree(d_pix_mean));
     CUDA_CHECK(cudaFree(d_depth));
     CUDA_CHECK(cudaFree(d_tiles_touched));
     CUDA_CHECK(cudaFree(d_tiles_offset));
+    CUDA_CHECK(cudaFree(d_keys_unsorted));
+    CUDA_CHECK(cudaFree(d_values_unsorted));
     return 0;
 }
