@@ -283,6 +283,9 @@ int main()
 
     CUDA_KERNEL_CHECK();
 
+    // Idea is, use exsting sort alrogithm from CUB
+    // check how it works, then I will implement radix sort by myself
+
 //     //test
 //     uint32_t* tiles_offset = new uint32_t[gc];
 //     uint32_t* tiles_touched = new uint32_t[gc];
