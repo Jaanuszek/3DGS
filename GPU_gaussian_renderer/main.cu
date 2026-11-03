@@ -7,6 +7,8 @@
 #include <random>
 #include <limits>
 
+#include "include/cpu_helpers.hpp"
+
 #include <curand_kernel.h>
 #include "cuda/helpers.cuh"
 #include "cuda_check.cuh"
@@ -175,7 +177,9 @@ int main()
     uint32_t* d_tiles_touched = nullptr;
     uint32_t* d_tiles_offset = nullptr;
     uint64_t* d_keys_unsorted = nullptr;
+    uint64_t* d_keys_sorted = nullptr;
     uint32_t* d_values_unsorted = nullptr;
+    uint32_t* d_values_sorted = nullptr;
 
     size_t ele_num = img.size();
 
@@ -243,20 +247,21 @@ int main()
 
     // Prefix sum of tiles touched [8, 1, 2, 3] -> [8, 9, 11, 14]
     void *d_temp_storage = nullptr;
-    size_t temp_storage_bytes = 0;
+    // required size of Inclusive Sum
+    size_t temp_storage_bytes_IS = 0;
     // first step get required size of temp_storage_bytes
     // first argument should be nullptr to determine that
     CUDA_CHECK(cub::DeviceScan::InclusiveSum(
-        nullptr, temp_storage_bytes,
+        nullptr, temp_storage_bytes_IS,
         d_tiles_touched, d_tiles_offset, gc
     ));
 
     // second step allocate required memory
-    CUDA_CHECK(cudaMalloc(&d_temp_storage, temp_storage_bytes));
+    CUDA_CHECK(cudaMalloc(&d_temp_storage, temp_storage_bytes_IS));
 
     // Finally run inlcusive prefix sum
     CUDA_CHECK(cub::DeviceScan::InclusiveSum(
-       d_temp_storage, temp_storage_bytes,
+       d_temp_storage, temp_storage_bytes_IS,
        d_tiles_touched, d_tiles_offset, gc
     ));
 
@@ -271,7 +276,10 @@ int main()
     ));
 
     CUDA_CHECK(cudaMalloc((void**)&d_keys_unsorted, total_tiles * sizeof(uint64_t)));
+    CUDA_CHECK(cudaMalloc((void**)&d_keys_sorted, total_tiles * sizeof(uint64_t)));
     CUDA_CHECK(cudaMalloc((void**)&d_values_unsorted, total_tiles * sizeof(uint32_t)));
+    CUDA_CHECK(cudaMalloc((void**)&d_values_sorted, total_tiles * sizeof(uint32_t)));
+
 
     // Get (unsorted) key-values arrays
     D_GS::gaussToTile<<<blocks_preprocess, threads>>>(
@@ -283,32 +291,74 @@ int main()
 
     CUDA_KERNEL_CHECK();
 
+    // required size of Temp storege of radix sort
+    size_t temp_storage_bytes_RS = 0;
+    void *d_temp_storage_RS = nullptr;
+
+    int tile_count_msb_idx = H_GS::get_msb_index(CONSTANT::GRID_X_MAX * CONSTANT::GRID_Y_MAX);
+    tile_count_msb_idx += 1; // SortPairs expect values [beginBit, endBit) <--- !
+    int end_bit = 32 + tile_count_msb_idx;
+
+    CUDA_CHECK(cub::DeviceRadixSort::SortPairs(
+       nullptr, temp_storage_bytes_RS,
+       d_keys_unsorted, d_keys_sorted,
+       d_values_unsorted, d_values_sorted,
+       total_tiles, 0, end_bit
+    ));
+
+    CUDA_CHECK(cudaMalloc((void**)&d_temp_storage_RS, temp_storage_bytes_RS));
+
+    CUDA_CHECK(cub::DeviceRadixSort::SortPairs(
+       d_temp_storage_RS, temp_storage_bytes_RS,
+       d_keys_unsorted, d_keys_sorted,
+       d_values_unsorted, d_values_sorted,
+       total_tiles, 0, end_bit
+    ));
+
     // Idea is, use exsting sort alrogithm from CUB
     // check how it works, then I will implement radix sort by myself
 
-//     //test
-//     uint32_t* tiles_offset = new uint32_t[gc];
-//     uint32_t* tiles_touched = new uint32_t[gc];
-//
-//     CUDA_CHECK(cudaMemcpy(tiles_offset, d_tiles_offset, gc * sizeof(uint32_t), cudaMemcpyDeviceToHost));
-//     CUDA_CHECK(cudaMemcpy(tiles_touched, d_tiles_touched, gc * sizeof(uint32_t), cudaMemcpyDeviceToHost));
-//
-//     for(int i = 0; i < gc; i++)
-//     {
-//         if(tiles_offset[i])
-//             std::cout << tiles_offset[i] << " ";
-//     }
-//     std::cout << '\n';
-//     for(int i = 0; i < gc; i++)
-//     {
-//         if(tiles_touched[i])
-//             std::cout << tiles_touched[i] << " ";
-//     }
-//     std::cout << '\n';
-//
-//     delete[] tiles_offset;
-//     delete[] tiles_touched;
+    //test
+    uint64_t* keys_unsorted = new uint64_t[total_tiles];
+    uint64_t* keys_sorted = new uint64_t[total_tiles];
 
+    uint32_t* values_unsorted = new uint32_t[total_tiles];
+    uint32_t* values_sorted = new uint32_t[total_tiles];
+
+    CUDA_CHECK(cudaMemcpy(keys_unsorted, d_keys_unsorted, total_tiles * sizeof(uint64_t), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(keys_sorted, d_keys_sorted, total_tiles * sizeof(uint64_t), cudaMemcpyDeviceToHost));
+
+    CUDA_CHECK(cudaMemcpy(values_unsorted, d_values_unsorted, total_tiles * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(values_sorted, d_values_sorted, total_tiles * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+    for(int i = 0; i < total_tiles; i++)
+    {
+        if(keys_unsorted[i])
+            std::cout << keys_unsorted[i] << " ";
+    }
+    std::cout << '\n';
+    for(int i = 0; i < total_tiles; i++)
+    {
+        if(keys_sorted[i])
+            std::cout << keys_sorted[i] << " ";
+    }
+    std::cout << '\n';
+    for(int i = 0; i < total_tiles; i++)
+    {
+        if(values_unsorted[i])
+            std::cout << values_unsorted[i] << " ";
+    }
+    std::cout << '\n';
+    for(int i = 0; i < total_tiles; i++)
+    {
+        if(values_sorted[i])
+            std::cout << values_sorted[i] << " ";
+    }
+    std::cout << '\n';
+
+    delete[] keys_unsorted;
+    delete[] keys_sorted;
+    delete[] values_unsorted;
+    delete[] values_sorted;
 
 
    // To synchronize asynchronous Cuda operations
@@ -353,6 +403,8 @@ int main()
     CUDA_CHECK(cudaFree(d_tiles_touched));
     CUDA_CHECK(cudaFree(d_tiles_offset));
     CUDA_CHECK(cudaFree(d_keys_unsorted));
+    CUDA_CHECK(cudaFree(d_keys_sorted));
     CUDA_CHECK(cudaFree(d_values_unsorted));
+    CUDA_CHECK(cudaFree(d_values_sorted));
     return 0;
 }

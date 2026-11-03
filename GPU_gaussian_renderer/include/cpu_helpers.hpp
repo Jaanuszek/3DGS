@@ -1,16 +1,14 @@
 #pragma once
 
 #include <cstdint>
+#include <bit>
 
 namespace H_GS
 {
-    uint32_t getMSB(uint32_t n)
+    inline int get_msb_index(uint32_t n)
     {
-        int step = sizeof(n) * 4;
-        uint32_t msb = 0;
-
-        if(n >= (1U << step)) { msb += step; n >>= step; step >>= 1; }
-
-        return msb;
+        if(n == 0) return -1;
+        // for older c++ <20 __builtin_clz can be used instead of std::countl_zero
+        return 31 - std::countl_zero(n);
     }
 }

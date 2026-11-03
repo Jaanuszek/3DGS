@@ -89,6 +89,13 @@ namespace D_GS
     {
         return make_int2(clamp(v.x, a.x, b.x), clamp(v.y, a.y, b.y));
     }
+
+    // it returns value from 0-31
+    __device__ __forceinline__ int get_msb_index(uint32_t n)
+   {
+       if (n == 0) return -1;
+       return 31 - __clz(n);
+   }
 }
 
 #endif
