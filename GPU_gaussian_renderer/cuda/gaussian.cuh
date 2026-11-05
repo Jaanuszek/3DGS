@@ -51,6 +51,8 @@ namespace D_GS
         const int gc
     );
 
+    __global__ void identifyTileRanges(uint64_t* key_sorted, uint2* ranges, int keys_size);
+
     // Check if gaussian is visible by camera
     __device__ bool in_frustum(
         const float3& pos,

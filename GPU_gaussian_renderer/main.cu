@@ -180,6 +180,7 @@ int main()
     uint64_t* d_keys_sorted = nullptr;
     uint32_t* d_values_unsorted = nullptr;
     uint32_t* d_values_sorted = nullptr;
+    uint2* d_tiles_range = nullptr;
 
     size_t ele_num = img.size();
 
@@ -279,7 +280,7 @@ int main()
     CUDA_CHECK(cudaMalloc((void**)&d_keys_sorted, total_tiles * sizeof(uint64_t)));
     CUDA_CHECK(cudaMalloc((void**)&d_values_unsorted, total_tiles * sizeof(uint32_t)));
     CUDA_CHECK(cudaMalloc((void**)&d_values_sorted, total_tiles * sizeof(uint32_t)));
-
+    CUDA_CHECK(cudaMalloc((void**)&d_tiles_range, total_tiles * sizeof(uint2)));
 
     // Get (unsorted) key-values arrays
     D_GS::gaussToTile<<<blocks_preprocess, threads>>>(
@@ -308,15 +309,15 @@ int main()
 
     CUDA_CHECK(cudaMalloc((void**)&d_temp_storage_RS, temp_storage_bytes_RS));
 
+    // Idea is, use exsting sort alrogithm from CUB
+    // check how it works, then I will implement radix sort by myself
+
     CUDA_CHECK(cub::DeviceRadixSort::SortPairs(
        d_temp_storage_RS, temp_storage_bytes_RS,
        d_keys_unsorted, d_keys_sorted,
        d_values_unsorted, d_values_sorted,
        total_tiles, 0, end_bit
     ));
-
-    // Idea is, use exsting sort alrogithm from CUB
-    // check how it works, then I will implement radix sort by myself
 
     //test
     uint64_t* keys_unsorted = new uint64_t[total_tiles];
@@ -360,10 +361,14 @@ int main()
     delete[] values_unsorted;
     delete[] values_sorted;
 
+    // To synchronize asynchronous Cuda operations
+    CUDA_CHECK(cudaDeviceSynchronize());
+    CUDA_CHECK(cudaFree(d_temp_storage));
 
-   // To synchronize asynchronous Cuda operations
-   CUDA_CHECK(cudaDeviceSynchronize());
-   CUDA_CHECK(cudaFree(d_temp_storage));
+    int blocks_tiles_size = (total_tiles + threads - 1) / threads;
+
+    D_GS::identifyTileRanges<<<blocks_tiles_size, threads>>>(keys_sorted, d_tiles_range, total_tiles);
+    CUDA_CHECK(cudaDeviceSynchronize());
 
     int blocks_render = (ele_num + threads - 1) / threads;
 
@@ -406,5 +411,6 @@ int main()
     CUDA_CHECK(cudaFree(d_keys_sorted));
     CUDA_CHECK(cudaFree(d_values_unsorted));
     CUDA_CHECK(cudaFree(d_values_sorted));
+    CUDA_CHECK(cudaFree(d_tiles_range));
     return 0;
 }

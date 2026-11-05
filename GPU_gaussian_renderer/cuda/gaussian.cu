@@ -89,6 +89,7 @@ namespace D_GS
         tiles_touched[idx] = t_touched;
     }
 
+    // gauss idx (value)  to tile_id + depth (key)
     __global__ void gaussToTile(
         const float dist,
         const float* depth,
@@ -130,6 +131,47 @@ namespace D_GS
                 off++;
             }
         }
+    }
+
+    // identify tile ranges
+    // Get Info regarding what is the range of given Tile_ID
+    // in key_sorted array.
+    // f.e:
+    // key_sorted = (uint32_t)[Tile_ID](uint32_t)[depth]
+    // key_sorted = [ 20213, 20214, 20216, 21321, 21567]
+    // Tile_ID_20 = {0,3}
+    // Tile_ID_21 = {3, 4}
+    //
+    // ranges contains values [begin, end)
+    __global__ void identifyTileRanges(uint64_t* key_sorted, uint2* ranges, int keys_size)
+    {
+        int idx = threadIdx.x + blockDim.x * blockIdx.x;
+        if(idx >= keys_size)
+            return;
+
+        uint32_t curr_key = key_sorted[idx] >> 32;
+        // first record will always be equal to 0
+        if(idx == 0)
+        {
+            ranges[curr_key].x = 0;
+        }
+        else
+        {
+            uint32_t prev_key = key_sorted[idx - 1] >> 32;
+            // if curr key is different than prev, that means
+            // we identified next TileID
+            if(curr_key != prev_key)
+            {
+                ranges[prev_key].y = idx;
+                ranges[curr_key].x = idx;
+            }
+        }
+
+        if(idx == (keys_size - 1))
+        {
+            ranges[curr_key].y = keys_size;
+        }
+
     }
 
     __device__ bool in_frustum(
