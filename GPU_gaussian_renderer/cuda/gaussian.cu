@@ -1,5 +1,7 @@
 #include "gaussian.cuh"
 #include "helpers.cuh"
+#include "ppm.hpp"
+// #include <__clang_cuda_builtin_vars.h>
 #include <glm/matrix.hpp>
 
 namespace D_GS
@@ -172,6 +174,47 @@ namespace D_GS
             ranges[curr_key].y = keys_size;
         }
 
+    }
+
+    __global__ void render(
+        int W, int H,
+        const uint2* ranges,
+        H_GS::pixel* image
+    )
+    {
+        const int BLOCK_SIZE = CONSTANT::TILE_X * CONSTANT::TILE_Y;
+        uint2 pix_min = {
+            blockIdx.x * CONSTANT::TILE_X,
+            blockIdx.y * CONSTANT::TILE_Y
+        };
+
+        uint2 pix_max = {
+            min(pix_min.x + CONSTANT::TILE_X, W),
+            max(pix_min.y + CONSTANT::TILE_Y, H)
+        };
+
+        uint2 pix = {
+            pix_min.x + threadIdx.x,
+            pix_min.y + threadIdx.y
+        };
+
+        // if pix is out of pixel range, then return
+        if(pix.x >= W || pix.y >= H)
+        {
+            return;
+        }
+
+        int tile_idx = blockIdx.y * gridDim.x + blockIdx.x;
+        uint2 range = ranges[tile_idx];
+
+        // how many gaussians are assigned to this tile
+        int gaussAssigned = range.y - range.x;
+
+        // for each pixel iterate through every gaussian assigned to this tile
+        for(int g = 0 ; g < gaussAssigned; g++)
+        {
+
+        }
     }
 
     __device__ bool in_frustum(
