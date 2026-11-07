@@ -1,6 +1,7 @@
 #pragma once
 
 #include "defines.hpp"
+#include "helpers.cuh"
 
 #include <glm/glm.hpp>
 #include <glm/ext/vector_float3.hpp>
@@ -23,6 +24,24 @@ namespace D_GS
     {
         int2 t_min;
         int2 t_max;
+    };
+
+    struct pixel{
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+
+        pixel operator+(const pixel& other) const{
+            return pixel(r + other.r, g + other.g, b + other.b);
+        }
+
+        pixel& operator+=(const pixel& rhs)
+        {
+            this->r += rhs.r;
+            this->g += rhs.g;
+            this->b += rhs.b;
+            return *this;
+        }
     };
 
     // gc - gaussian count
@@ -53,7 +72,15 @@ namespace D_GS
 
     __global__ void identifyTileRanges(uint64_t* key_sorted, uint2* ranges, int keys_size);
 
-    __global__ void render();
+    __global__ void render(
+        int W, int H,
+        const uint2* ranges,
+        const Gaussian* gaussians,
+        const float2* pix_mean,
+        const float3* inv_cov,
+        const uint32_t* values_sorted,
+        pixel* image
+    );
 
     // Check if gaussian is visible by camera
     __device__ bool in_frustum(

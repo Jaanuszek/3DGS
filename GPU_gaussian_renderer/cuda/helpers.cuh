@@ -80,6 +80,27 @@ namespace D_GS
         return max(a, min(f, b));
     }
 
+    //https://docs.nvidia.com/cuda/cuda-math-api/cuda_math_api/group__CUDA__MATH__INTRINSIC__SINGLE.html#_CPPv411__saturateff
+    __device__ __forceinline__ float clamp_norm(float f)
+    {
+        return __saturatef(f);
+    }
+
+    __device__ __forceinline__ float3 clamp_norm(float3 v)
+    {
+        return make_float3(clamp_norm(v.x), clamp_norm(v.y), clamp_norm(v.z));
+    }
+
+    __device__ __forceinline__ float clamp(float v, float a, float b)
+    {
+        return fmaxf(a, fminf(v, b));
+    }
+
+    __device__ __forceinline__ float3 clamp(float3 v, float a, float b)
+    {
+        return make_float3(clamp(v.x, a ,b), clamp(v.y, a, b), clamp(v.z, a ,b));
+    }
+
     __device__ __forceinline__ int2 clamp(int2 v, int a, int b)
     {
         return make_int2(clamp(v.x, a, b), clamp(v.y, a, b));

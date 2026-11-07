@@ -1,8 +1,8 @@
 #include "gaussian.cuh"
 #include "helpers.cuh"
 #include "ppm.hpp"
-// #include <__clang_cuda_builtin_vars.h>
 #include <glm/matrix.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace D_GS
 {
@@ -179,10 +179,19 @@ namespace D_GS
     __global__ void render(
         int W, int H,
         const uint2* ranges,
-        H_GS::pixel* image
+        const Gaussian* gaussians,
+        const float2* pix_mean,
+        const float3* inv_cov,
+        const uint32_t* values_sorted,
+        pixel* image
     )
     {
         const int BLOCK_SIZE = CONSTANT::TILE_X * CONSTANT::TILE_Y;
+
+        const int thread_x = blockDim.x * blockIdx.x + threadIdx.x;
+        const int thread_y = blockDim.y * blockIdx.y + threadIdx.y;
+        const int idx = thread_y * W + thread_x; // global idx of image
+
         uint2 pix_min = {
             blockIdx.x * CONSTANT::TILE_X,
             blockIdx.y * CONSTANT::TILE_Y
@@ -210,11 +219,57 @@ namespace D_GS
         // how many gaussians are assigned to this tile
         int gaussAssigned = range.y - range.x;
 
-        // for each pixel iterate through every gaussian assigned to this tile
-        for(int g = 0 ; g < gaussAssigned; g++)
-        {
+        float2 p(pix.x + 0.5f, pix.y + 0.5f);
+        float3 C = make_float3(0,0,0);
+        float T = 1.0f;
 
+        // for each pixel iterate through every gaussian assigned to this tile
+        for(int g = range.x ; g < range.y; g++)
+        {
+            // gaussian ID -- Next step - shared memory
+            const uint32_t g_id = values_sorted[g];
+            const float2 g_mean = pix_mean[g_id];
+            const float3 g_inv_cov = inv_cov[g_id];
+            const Gaussian gauss = gaussians[g_id];
+
+            glm::mat2 g_inv_cov_m = glm::mat2(
+                g_inv_cov.x, g_inv_cov.y,
+                g_inv_cov.y, g_inv_cov.z
+            );
+
+            float* inv_cov_m_p = glm::value_ptr(g_inv_cov_m);
+
+            const float2 d = make_float2(
+                p.x - g_mean.x,
+                p.y - g_mean.y
+            );
+
+            float q = dot(d, mat2_mul_vec2(inv_cov_m_p, d));
+            float density = expf(-0.5f * q);
+            float alpha = min(0.99f, density * gauss.opacity);
+
+            if(alpha < 1.0f / 255.0f)
+                continue;
+
+            const float cr = gauss.color.x;
+            const float cg = gauss.color.y;
+            const float cb = gauss.color.z;
+
+            const float weight = T * alpha;
+
+            C.x += cr * weight;
+            C.y += cg * weight;
+            C.z += cb * weight;
+
+            T *= (1.0f - alpha);
+            if(T < 0.0001f)
+                break;
         }
+        C = clamp_norm(C);
+
+        image[idx].r = static_cast<uint8_t>(C.x * 255.0f);
+        image[idx].g = static_cast<uint8_t>(C.y * 255.0f);
+        image[idx].b = static_cast<uint8_t>(C.z * 255.0f);
     }
 
     __device__ bool in_frustum(

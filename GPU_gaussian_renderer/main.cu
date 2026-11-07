@@ -38,75 +38,8 @@ namespace
     const glm::vec3 GLOBAL_UP = glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
-using H_GS::pixel;
+using D_GS::pixel;
 using D_GS::Gaussian;
-
-__global__ void renderGaussians(
-    const D_GS::Gaussian* gaussians,
-    const float2* pix_mean, const float3* inv_cov,
-    pixel* image, uint32_t image_size, uint32_t gc)
-{
-    int idx = threadIdx.x + blockDim.x * blockIdx.x;
-
-    if(idx >= image_size)
-        return;
-
-    int pix_x = idx % WIDTH;
-    int pix_y = idx / WIDTH;
-    glm::vec2 p(pix_x + 0.5f , pix_y + 0.5f);
-
-    glm::vec3 C(0.0f);
-    float T = 1.0f;
-
-    for(int i = 0; i < gc; i++)
-    {
-        const float2 g_mean = pix_mean[i];
-        const float3 g_inv_cov = inv_cov[i];
-        const Gaussian g = gaussians[i];
-
-        glm::mat2 g_inv_cov_m = glm::mat2(
-          g_inv_cov.x, g_inv_cov.y,
-          g_inv_cov.y, g_inv_cov.z
-        );
-
-        float* inv_cov_m_p = glm::value_ptr(g_inv_cov_m);
-
-        const float2 d = make_float2(
-            p.x - g_mean.x,
-            p.y - g_mean.y
-        );
-
-        // float q = glm::dot(d, g_inv_cov_m * d);
-        float q = D_GS::dot(d, D_GS::mat2_mul_vec2(inv_cov_m_p, d));
-
-        float density = expf(-0.5f * q);
-
-        float alpha = min(0.99f, density * g.opacity);
-
-        if(alpha < 1.0f / 255.0f)
-            continue;
-
-        // This does not work in kernel:
-        // C += g.color * (T * alpha);
-        const float cr = g.color.x;
-        const float cg = g.color.y;
-        const float cb = g.color.z;
-
-        const float weight = T * alpha;
-
-        C.x += cr * weight;
-        C.y += cg * weight;
-        C.z += cb * weight;
-        T *= (1.0f - alpha);
-        if(T < 0.0001f)
-            break;
-    }
-    C = glm::clamp(C,0.0f, 1.0f);
-
-    image[idx].r = static_cast<uint8_t>(C.r * 255.0f);
-    image[idx].g = static_cast<uint8_t>(C.g * 255.0f);
-    image[idx].b = static_cast<uint8_t>(C.b * 255.0f);
-}
 
 int main()
 {
@@ -162,7 +95,7 @@ int main()
 
     glm::mat4 viewMat = glm::lookAt(cameraPos, targetPos, GLOBAL_UP);
 
-    std::vector<pixel>& img = renderer.getImage();
+    std::vector<H_GS::pixel>& img = renderer.getImage();
 
     pixel* d_image = nullptr;
 
@@ -319,55 +252,13 @@ int main()
        total_tiles, 0, end_bit
     ));
 
-    //test
-    uint64_t* keys_unsorted = new uint64_t[total_tiles];
-    uint64_t* keys_sorted = new uint64_t[total_tiles];
-
-    uint32_t* values_unsorted = new uint32_t[total_tiles];
-    uint32_t* values_sorted = new uint32_t[total_tiles];
-
-    CUDA_CHECK(cudaMemcpy(keys_unsorted, d_keys_unsorted, total_tiles * sizeof(uint64_t), cudaMemcpyDeviceToHost));
-    CUDA_CHECK(cudaMemcpy(keys_sorted, d_keys_sorted, total_tiles * sizeof(uint64_t), cudaMemcpyDeviceToHost));
-
-    CUDA_CHECK(cudaMemcpy(values_unsorted, d_values_unsorted, total_tiles * sizeof(uint32_t), cudaMemcpyDeviceToHost));
-    CUDA_CHECK(cudaMemcpy(values_sorted, d_values_sorted, total_tiles * sizeof(uint32_t), cudaMemcpyDeviceToHost));
-    for(int i = 0; i < total_tiles; i++)
-    {
-        if(keys_unsorted[i])
-            std::cout << keys_unsorted[i] << " ";
-    }
-    std::cout << '\n';
-    for(int i = 0; i < total_tiles; i++)
-    {
-        if(keys_sorted[i])
-            std::cout << keys_sorted[i] << " ";
-    }
-    std::cout << '\n';
-    for(int i = 0; i < total_tiles; i++)
-    {
-        if(values_unsorted[i])
-            std::cout << values_unsorted[i] << " ";
-    }
-    std::cout << '\n';
-    for(int i = 0; i < total_tiles; i++)
-    {
-        if(values_sorted[i])
-            std::cout << values_sorted[i] << " ";
-    }
-    std::cout << '\n';
-
-    delete[] keys_unsorted;
-    delete[] keys_sorted;
-    delete[] values_unsorted;
-    delete[] values_sorted;
-
     // To synchronize asynchronous Cuda operations
     CUDA_CHECK(cudaDeviceSynchronize());
     CUDA_CHECK(cudaFree(d_temp_storage));
 
     int blocks_tiles_size = (total_tiles + threads - 1) / threads;
 
-    D_GS::identifyTileRanges<<<blocks_tiles_size, threads>>>(keys_sorted, d_tiles_range, total_tiles);
+    D_GS::identifyTileRanges<<<blocks_tiles_size, threads>>>(d_keys_sorted, d_tiles_range, total_tiles);
     CUDA_CHECK(cudaDeviceSynchronize());
 
     int blocks_render = (ele_num + threads - 1) / threads;
@@ -376,13 +267,16 @@ int main()
     cudaEventCreate(&start1);
     cudaEventCreate(&stop1);
     cudaEventRecord(start1, 0);
-    renderGaussians<<<blocks_render, threads>>>(
-        d_gaussians,
-        d_pix_mean,
-        d_inv_cov,
-        d_image,
-        static_cast<uint32_t>(image_size),
-        static_cast<uint32_t>(gc)
+
+    int gridX = (CONSTANT::WIDTH + CONSTANT::TILE_X - 1) / CONSTANT::TILE_X;
+    int gridY = (CONSTANT::HEIGHT + CONSTANT::TILE_Y - 1) / CONSTANT::TILE_Y;
+    dim3 render_grid(gridX, gridY, 1);
+    dim3 render_block(CONSTANT::TILE_X, CONSTANT::TILE_Y, 1);
+    D_GS::render<<<render_grid, render_block>>>(
+        CONSTANT::WIDTH, CONSTANT::HEIGHT,
+        d_tiles_range, d_gaussians,
+        d_pix_mean, d_inv_cov,
+        d_values_sorted, d_image
     );
     cudaEventRecord(stop1,0);
     cudaEventSynchronize(stop1);
