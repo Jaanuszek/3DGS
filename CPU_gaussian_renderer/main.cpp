@@ -32,8 +32,8 @@ int main()
     glm::mat3x3 scale_m(1.0f);
 
     std::random_device rd;
-    // std::mt19937 gen(12345); <------ In case if I want to have seeded rand
-    std::mt19937 gen(rd());
+    std::mt19937 gen(12345); //<------ In case if I want to have seeded rand
+    // std::mt19937 gen(rd());
 
     std::uniform_real_distribution<float> dist_x(-10.0f, 10.0f);
     std::uniform_real_distribution<float> dist_y(-10.0f, 10.0f);

@@ -28,6 +28,8 @@ namespace
     constexpr uint32_t WIDTH = 800;
     constexpr uint32_t HEIGHT = 600;
 
+    constexpr uint32_t GAUSSIANS_COUNT = 200;
+
     constexpr float ASPECT_RATIO = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
     constexpr float NEAR = 0.1f;
     constexpr float FAR = 100.0f;
@@ -45,41 +47,64 @@ int main()
 {
     H_GS::Renderer renderer;
 
-    D_GS::Gaussian g1{
-        .rotation = make_float4(1.0f, 0.0f, 0.0f, 0.0f),
-        .mean3d = make_float3(0.0f, 0.0f, -10.0f),
-        .scale = make_float3(1.0f, 2.0f, 1.0f),
-        .color = make_float3(0.3f, 1.0f, 0.08),
-        .opacity = 0.5f
-    };
+    std::random_device rd;
+    std::mt19937 gen(12345);
 
-    D_GS::Gaussian g2{
-        .rotation = make_float4(0.70710678f, 0.0f, 0.70710678f, 0.0f),
-        .mean3d = make_float3(1.0f, 1.0f, -10.0f),
-        .scale = make_float3(1.0f, 1.0f, 1.0f),
-        .color = make_float3(1.0f, 0.0f, 0.0f),
-        .opacity = 1.0f
-    };
+    std::uniform_real_distribution<float> dist_x(-10.0f, 10.0f);
+    std::uniform_real_distribution<float> dist_y(-10.0f, 10.0f);
+    std::uniform_real_distribution<float> dist_z(-30.0f, -5.0f);
+    std::uniform_real_distribution<float> dist_color(0.0f, 1.0f);
+    std::uniform_real_distribution<float> dist_opacity(0.0f, 1.0f);
 
-    D_GS::Gaussian g3{
-        .rotation = make_float4(1.0f, 0.0f, 0.0f, 0.0f),
-        .mean3d = make_float3(-2.0f, -2.0f, -10.0f),
-        .scale = make_float3(3.0f, 1.0f, 5.0f),
-        .color = make_float3(0.0f, 0.0f, 1.0f),
-        .opacity = 0.7f
-    };
+    std::vector<Gaussian> h_gaussians;
+    h_gaussians.reserve(GAUSSIANS_COUNT);
 
-    D_GS::Gaussian g4{
-            .rotation = make_float4(1.0f, 0.0f, 0.0f, 0.0f),
-            .mean3d = make_float3(-5.0f, -5.0f, -15.0f),
-            .scale = make_float3(3.0f, 1.0f, 5.0f),
-            .color = make_float3(1.0f, 1.0f, 0.0f),
-            .opacity = 0.7f
-        };
+    for(uint32_t i = 0; i < GAUSSIANS_COUNT; i++)
+    {
+        h_gaussians.emplace_back(Gaussian{
+                .rotation = make_float4(1.0f, 0.0f, 0.0f, 0.0f),
+                .mean3d = make_float3(dist_x(gen), dist_y(gen), dist_z(gen)),
+                .scale = make_float3(1.0f, 1.0f, 1.0f),
+                .color = make_float3(dist_color(gen), dist_opacity(gen), dist_color(gen)),
+                .opacity = dist_opacity(gen)
+            }
+        );
+    }
+//     D_GS::Gaussian g1{
+//         .rotation = make_float4(1.0f, 0.0f, 0.0f, 0.0f),
+//         .mean3d = make_float3(0.0f, 0.0f, -10.0f),
+//         .scale = make_float3(1.0f, 2.0f, 1.0f),
+//         .color = make_float3(0.3f, 1.0f, 0.08),
+//         .opacity = 0.5f
+//     };
+//
+//     D_GS::Gaussian g2{
+//         .rotation = make_float4(0.70710678f, 0.0f, 0.70710678f, 0.0f),
+//         .mean3d = make_float3(1.0f, 1.0f, -10.0f),
+//         .scale = make_float3(1.0f, 1.0f, 1.0f),
+//         .color = make_float3(1.0f, 0.0f, 0.0f),
+//         .opacity = 1.0f
+//     };
+//
+//     D_GS::Gaussian g3{
+//         .rotation = make_float4(1.0f, 0.0f, 0.0f, 0.0f),
+//         .mean3d = make_float3(-2.0f, -2.0f, -10.0f),
+//         .scale = make_float3(3.0f, 1.0f, 5.0f),
+//         .color = make_float3(0.0f, 0.0f, 1.0f),
+//         .opacity = 0.7f
+//     };
+//
+//     D_GS::Gaussian g4{
+//             .rotation = make_float4(1.0f, 0.0f, 0.0f, 0.0f),
+//             .mean3d = make_float3(-5.0f, -5.0f, -15.0f),
+//             .scale = make_float3(3.0f, 1.0f, 5.0f),
+//             .color = make_float3(1.0f, 1.0f, 0.0f),
+//             .opacity = 0.7f
+//     };
 
-    std::vector<Gaussian> h_gaussians{
-      g1, g2, g3, g4
-    };
+    // std::vector<Gaussian> h_gaussians{
+    //   g1, g2, g3, g4
+    // };
 
     size_t gc = h_gaussians.size();
 
