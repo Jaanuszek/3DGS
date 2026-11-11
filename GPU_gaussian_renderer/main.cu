@@ -21,6 +21,8 @@
 #include "renderer.hpp"
 #include "gaussian.cuh"
 
+#include "nvtx3/nvtx3.hpp"
+
 namespace
 {
     constexpr uint32_t MAX = 255;
@@ -28,7 +30,7 @@ namespace
     constexpr uint32_t WIDTH = 800;
     constexpr uint32_t HEIGHT = 600;
 
-    constexpr uint32_t GAUSSIANS_COUNT = 200;
+    constexpr uint32_t GAUSSIANS_COUNT = 10000;
 
     constexpr float ASPECT_RATIO = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
     constexpr float NEAR = 0.1f;
@@ -48,7 +50,7 @@ int main()
     H_GS::Renderer renderer;
 
     std::random_device rd;
-    std::mt19937 gen(12345);
+    std::mt19937 gen(rd());
 
     std::uniform_real_distribution<float> dist_x(-10.0f, 10.0f);
     std::uniform_real_distribution<float> dist_y(-10.0f, 10.0f);
@@ -70,41 +72,6 @@ int main()
             }
         );
     }
-//     D_GS::Gaussian g1{
-//         .rotation = make_float4(1.0f, 0.0f, 0.0f, 0.0f),
-//         .mean3d = make_float3(0.0f, 0.0f, -10.0f),
-//         .scale = make_float3(1.0f, 2.0f, 1.0f),
-//         .color = make_float3(0.3f, 1.0f, 0.08),
-//         .opacity = 0.5f
-//     };
-//
-//     D_GS::Gaussian g2{
-//         .rotation = make_float4(0.70710678f, 0.0f, 0.70710678f, 0.0f),
-//         .mean3d = make_float3(1.0f, 1.0f, -10.0f),
-//         .scale = make_float3(1.0f, 1.0f, 1.0f),
-//         .color = make_float3(1.0f, 0.0f, 0.0f),
-//         .opacity = 1.0f
-//     };
-//
-//     D_GS::Gaussian g3{
-//         .rotation = make_float4(1.0f, 0.0f, 0.0f, 0.0f),
-//         .mean3d = make_float3(-2.0f, -2.0f, -10.0f),
-//         .scale = make_float3(3.0f, 1.0f, 5.0f),
-//         .color = make_float3(0.0f, 0.0f, 1.0f),
-//         .opacity = 0.7f
-//     };
-//
-//     D_GS::Gaussian g4{
-//             .rotation = make_float4(1.0f, 0.0f, 0.0f, 0.0f),
-//             .mean3d = make_float3(-5.0f, -5.0f, -15.0f),
-//             .scale = make_float3(3.0f, 1.0f, 5.0f),
-//             .color = make_float3(1.0f, 1.0f, 0.0f),
-//             .opacity = 0.7f
-//     };
-
-    // std::vector<Gaussian> h_gaussians{
-    //   g1, g2, g3, g4
-    // };
 
     size_t gc = h_gaussians.size();
 
@@ -145,7 +112,6 @@ int main()
     uint32_t image_size = static_cast<uint32_t>(ele_num);
     size_t image_bytes = ele_num * sizeof(pixel);
 
-    CUDA_CHECK(cudaMalloc((void**)&d_image, image_bytes));
 
     size_t gaussian_size = gc * sizeof(D_GS::Gaussian);
     size_t gs_float_size = gc * sizeof(float);
@@ -155,9 +121,12 @@ int main()
     size_t inv_cov_size = gc * sizeof(float3);
     size_t mat4x4_size_f = 16 * sizeof(float);
 
+    nvtx3::range_handle h = nvtx3::start_range("First CudaMalloc batch", nvtx3::rgb{127,255,0});
+
+    CUDA_CHECK(cudaMalloc((void**)&d_image, image_bytes));
     CUDA_CHECK(cudaMalloc((void**)&d_gaussians, gaussian_size));
 
-    CUDA_CHECK(cudaMalloc((void**)&d_cov3Ds, gs_float_size));
+    CUDA_CHECK(cudaMalloc((void**)&d_cov3Ds, gs_float_size * 6));
     CUDA_CHECK(cudaMalloc((void**)&d_cov2Ds, gs_float3_size));
     CUDA_CHECK(cudaMalloc((void**)&d_inv_cov, inv_cov_size));
     CUDA_CHECK(cudaMalloc((void**)&d_pix_mean, gs_float2_size));
@@ -167,11 +136,14 @@ int main()
     CUDA_CHECK(cudaMalloc((void**)&d_tiles_touched, gs_uint32_size));
     CUDA_CHECK(cudaMalloc((void**)&d_tiles_offset, gs_uint32_size));
 
+    nvtx3::end_range(h);
+
     CUDA_CHECK(cudaMemcpy(d_image, img.data(), image_bytes, cudaMemcpyHostToDevice));
 
     CUDA_CHECK(cudaMemcpy(d_gaussians, h_gaussians.data(), gaussian_size, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_proj_mat, glm::value_ptr(projMat), mat4x4_size_f, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_view_mat, glm::value_ptr(viewMat), mat4x4_size_f, cudaMemcpyHostToDevice));
+
     CUDA_CHECK(cudaMemset(d_cov3Ds, 0, gs_float_size));
     CUDA_CHECK(cudaMemset(d_cov2Ds, 0, gs_float3_size));
     CUDA_CHECK(cudaMemset(d_inv_cov, 0, inv_cov_size));
@@ -234,11 +206,15 @@ int main()
        cudaMemcpyDeviceToHost
     ));
 
+    nvtx3::range_handle h2 = nvtx3::start_range("Second CudaMalloc batch", nvtx3::rgb{0,255,0});
+
     CUDA_CHECK(cudaMalloc((void**)&d_keys_unsorted, total_tiles * sizeof(uint64_t)));
     CUDA_CHECK(cudaMalloc((void**)&d_keys_sorted, total_tiles * sizeof(uint64_t)));
     CUDA_CHECK(cudaMalloc((void**)&d_values_unsorted, total_tiles * sizeof(uint32_t)));
     CUDA_CHECK(cudaMalloc((void**)&d_values_sorted, total_tiles * sizeof(uint32_t)));
     CUDA_CHECK(cudaMalloc((void**)&d_tiles_range, total_tiles * sizeof(uint2)));
+
+    nvtx3::end_range(h2);
 
     // Get (unsorted) key-values arrays
     D_GS::gaussToTile<<<blocks_preprocess, threads>>>(

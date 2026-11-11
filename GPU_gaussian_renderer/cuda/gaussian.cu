@@ -54,6 +54,8 @@ namespace D_GS
             return;
 
         // 2.
+        // * 6 because this cov3Ds pointer holds 6 floats
+        // that desribes 3d covariance matrix
         float* cov3D = cov3Ds + idx * 6;
         computeCov3D(gs.scale, gs.rotation, cov3D);
 
